@@ -1,7 +1,7 @@
 <html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Video Asset Manager</title>
+<title>Campaign Manager</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -147,6 +147,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .ctx-item:hover{background:#f1f5f9}
 .ctx-danger{color:#ef4444}
 .ctx-danger:hover{background:#fef2f2}
+.score-bar{display:flex;height:6px;border-radius:3px;overflow:hidden;margin:14px 0 8px;background:#f1f5f9}
+.sb-g{background:#10b981}
+.sb-a{background:#f59e0b}
+.sb-r{background:#ef4444}
+.sb-u{background:#e2e8f0}
+.pc-dist{display:flex;gap:10px;font-size:11px;color:#94a3b8}
 </style>
 </head>
 <body>
@@ -303,6 +309,7 @@ var state = { folderId:null, projectId:null, folders:[], assets:[], currentAsset
 var uploadFiles = { video:null, pptx:null };
 var ctxId = null, projCtxId = null, moveAssetId = null, dragCounter = 0;
 var colorValues = { red:0, amber:50, green:100 };
+var projectStats = {};
 
 async function api(url, opts) {
   var res = await fetch(url, Object.assign({ headers:{"Content-Type":"application/json"} }, opts||{}));
@@ -314,18 +321,19 @@ async function loadFolders() {
 }
 
 // ── Home ─────────────────────────────────────────────────────────────────────
-function showHome() {
-  pauseVideo();
-  state.folderId = null;
-  state.projectId = null;
-  state.assets = [];
-  document.getElementById("detail-view").style.display = "none";
-  document.getElementById("grid-view").style.display = "block";
-  document.getElementById("home-view").style.display = "block";
-  document.getElementById("project-view").style.display = "none";
-  document.getElementById("breadcrumb").innerHTML = "";
-  document.getElementById("hdr-btns").innerHTML = '<button class="btn btn-primary" onclick="newProject()">+ New Project</button>';
-  renderHome();
+async function showHome() {
+pauseVideo();
+state.folderId = null;
+state.projectId = null;
+state.assets = [];
+document.getElementById("detail-view").style.display = "none";
+document.getElementById("grid-view").style.display = "block";
+document.getElementById("home-view").style.display = "block";
+document.getElementById("project-view").style.display = "none";
+document.getElementById("breadcrumb").innerHTML = "";
+document.getElementById("hdr-btns").innerHTML = '<button class="btn btn-primary" onclick="newProject()">+ New Project</button>';
+try { projectStats = await api("/api/projects/stats"); } catch(e) { projectStats = {}; }
+renderHome();
 }
 
 function renderHome() {
@@ -335,15 +343,36 @@ function renderHome() {
     grid.innerHTML = '<div class="home-empty"><div style="font-size:64px;margin-bottom:20px">📁</div><div style="font-size:20px;font-weight:600;color:#64748b;margin-bottom:8px">No projects yet</div><div style="font-size:14px;color:#94a3b8">Click + New Project to get started</div></div>';
     return;
   }
-  grid.innerHTML = projects.map(function(f){
-    var subs = state.folders.filter(function(c){ return c.parent_id === f.id; }).length;
-    var h = '<div class="project-card" data-id="'+f.id+'" onclick="enterProject('+f.id+')">';
-    h += '<div class="pc-icon">📁</div>';
-    h += '<div class="pc-name">'+f.name+'</div>';
-    h += '<div class="pc-meta">'+(subs ? subs+' folder'+(subs!==1?'s':'') : 'Empty project')+'</div>';
-    h += '</div>';
-    return h;
-  }).join("");
+grid.innerHTML = projects.map(function(f) {
+var s = projectStats[String(f.id)] || {total:0,green:0,amber:0,red:0,unscored:0};
+var subs = state.folders.filter(function(c){ return c.parent_id===f.id; }).length;
+var meta = [];
+if (subs) meta.push(subs+' folder'+(subs!==1?'s':''));
+if (s.total) meta.push(s.total+' asset'+(s.total!==1?'s':''));
+var bar = '', dist = '';
+if (s.total > 0) {
+  var t = s.total;
+  bar = '<div class="score-bar">' +
+    '<div class="sb-g" style="width:'+(s.green/t*100)+'%"></div>' +
+    '<div class="sb-a" style="width:'+(s.amber/t*100)+'%"></div>' +
+    '<div class="sb-r" style="width:'+(s.red/t*100)+'%"></div>' +
+    '<div class="sb-u" style="width:'+(s.unscored/t*100)+'%"></div>' +
+    '</div>';
+  var parts = [];
+  if (s.green)   parts.push('<span>🟢 '+s.green+'</span>');
+  if (s.amber)   parts.push('<span>🟡 '+s.amber+'</span>');
+  if (s.red)     parts.push('<span>🔴 '+s.red+'</span>');
+  if (s.unscored) parts.push('<span>○ '+s.unscored+'</span>');
+  dist = '<div class="pc-dist">'+parts.join('')+'</div>';
+}
+var h = '<div class="project-card" data-id="'+f.id+'" onclick="enterProject('+f.id+')">';
+h += '<div class="pc-icon">📁</div>';
+h += '<div class="pc-name">'+f.name+'</div>';
+h += '<div class="pc-meta">'+(meta.join(' · ')||'Empty project')+'</div>';
+h += bar + dist;
+h += '</div>';
+return h;
+}).join("");
   grid.querySelectorAll(".project-card").forEach(function(card) {
     card.addEventListener("contextmenu", function(e) { e.preventDefault(); showProjCtx(e, parseInt(card.dataset.id)); });
   });
@@ -377,12 +406,13 @@ async function renameProjCtx() {
   renderHome();
 }
 async function deleteProjCtx() {
-  if (!projCtxId) return;
-  var f = state.folders.find(function(x){ return x.id===projCtxId; });
-  if (!confirm('Delete project "'+(f?f.name:"")+'"\nThis will delete all folders and assets inside it. Cannot be undone.')) return;
-  await api("/api/folders/"+projCtxId, {method:"DELETE"});
+if (!projCtxId) return;
+var id = projCtxId;
+hideProjCtx();
+await safeDeleteFolder(id, async function(){
   await loadFolders();
   renderHome();
+});
 }
 
 // ── Project View ──────────────────────────────────────────────────────────────
@@ -512,11 +542,11 @@ async function saveFolder() {
 function hideFolderInput() { document.getElementById("finput-row").style.display="none"; document.getElementById("finput").value=""; }
 
 async function deleteF(id) {
-  if (!confirm("Delete this folder? Assets inside will move to root.")) return;
-  await api("/api/folders/"+id, {method:"DELETE"});
+await safeDeleteFolder(id, async function(){
   if (state.folderId===id) state.folderId = state.projectId;
   await loadFolders();
   loadAssets(state.folderId);
+});
 }
 async function renameF(id) {
   var f = state.folders.find(function(x){ return x.id===id; });
@@ -619,7 +649,7 @@ btn.style.fontSize = "12px";
 document.querySelector(".detail-hdr").appendChild(btn);
 }
 btn.textContent = version.kpi_data ? "📊 Replace Report" : "📊 Add Report";
-btn.onclick = function(){ showReportModal(version.id); };
+btn.onclick = function(){ showReportModal(version.id, version.video_filename); };
 }
 async function switchVersion(versionId) {
   var v=state.currentAsset.versions.find(function(x){ return x.id===parseInt(versionId); });
@@ -672,6 +702,13 @@ async function submitUpload(){
   if(!uploadFiles.video){setStatus("Please select a video file","error");return;}
   document.getElementById("upload-submit").disabled=true;
   setStatus("Processing...","info");
+  if (uploadFiles.pptx && !checkPair(uploadFiles.video.name, uploadFiles.pptx.name)) {
+if (!confirm('This report may not belong to this video.\n\nVideo: ' + uploadFiles.video.name + '\nReport: ' + uploadFiles.pptx.name + '\n\nPair them anyway?')) {
+  document.getElementById("upload-submit").disabled = false;
+  setStatus("Upload cancelled.", "error");
+  return;
+}
+}
   var scoresJson=null,assetInfoJson=null,thumbnail=null,aceScore=null;
   if(uploadFiles.pptx){
     try{
@@ -851,18 +888,37 @@ await loadFolders(); renderSidebar(); renderGrid(); renderBreadcrumb();
 }
 async function folderCtxDelete() {
 if (!folderCtxId) return;
-var f = state.folders.find(function(x){ return x.id===folderCtxId; });
-if (!confirm('Delete "' + (f?f.name:"") + '"? Assets inside will move up a level.')) return;
-await api("/api/folders/"+folderCtxId, {method:"DELETE"});
-if (state.folderId===folderCtxId) state.folderId = state.projectId;
-await loadFolders(); renderSidebar(); renderGrid();
+var id = folderCtxId;
+hideFolderCtx();
+await safeDeleteFolder(id, async function(){
+  if (state.folderId===id) state.folderId = state.projectId;
+  await loadFolders();
+  renderSidebar();
+  renderGrid();
+});
 }
+
+async function safeDeleteFolder(id, onSuccess) {
+var data = await api("/api/folders/"+id+"/count");
+var count = data.count || 0;
+var folder = state.folders.find(function(f){ return f.id===id; });
+var name = folder ? folder.name : "this folder";
+var msg = count > 0
+  ? 'Delete "'+name+'"?\n\n'+count+' asset'+(count!==1?'s':'')+' and all their files will be permanently deleted. This cannot be undone.'
+  : 'Delete "'+name+'"?';
+if (!confirm(msg)) return;
+await api("/api/folders/"+id, {method:"DELETE"});
+if (onSuccess) onSuccess();
+}
+
 
 var reportVersionId = null;
 var reportFile = null;
+var reportVideoName = null;
 
-function showReportModal(versionId) {
+function showReportModal(versionId, videoFilename) {
 reportVersionId = versionId;
+reportVideoName = videoFilename || null;
 reportFile = null;
 document.getElementById("report-fname").textContent = "";
 document.getElementById("report-status").style.display = "none";
@@ -892,6 +948,11 @@ el.style.display = "block"; el.className = "upstatus "+type; el.textContent = ms
 }
 async function submitReport() {
 if (!reportFile) { setRptStatus("Please select a PPTX file", "error"); return; }
+if (reportVideoName && !checkPair(reportVideoName, reportFile.name)) {
+if (!confirm('This report may not belong to this video.\n\nVideo: ' + reportVideoName + '\nReport: ' + reportFile.name + '\n\nPair them anyway?')) {
+  return;
+}
+}
 document.getElementById("report-submit").disabled = true;
 setRptStatus("Parsing report...", "info");
 try {
@@ -927,7 +988,24 @@ try {
 function addReportFromCtx() {
 var asset = state.assets.find(function(a){ return a.id===ctxId; });
 if (!asset || !asset.latest_version_id) return;
-showReportModal(asset.latest_version_id);
+showReportModal(asset.latest_version_id, asset.video_filename);
+}
+
+function checkPair(videoName, pptxName) {
+var vNorm = videoName.toLowerCase().replace(/[^a-z0-9]/g, '');
+var pNorm = pptxName.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+// Direction 1: does PPTX contain the video token?
+if (pNorm.includes(vNorm)) return true;
+
+// Direction 2: strip Brainsuite boilerplate, check if PPTX core is in video
+var pCore = pptxName.toLowerCase()
+  .replace(/^ace[^_]*_/, '')       // strip 'ace-social-media-video-updated_'
+  .replace(/_?\d{8}\.pptx$/, '')   // strip '_20260213.pptx'
+  .replace(/^[a-z]+_/, '')         // strip company name e.g. 'unilever_'
+  .replace(/[^a-z0-9]/g, '');
+
+return pCore.length > 4 && vNorm.includes(pCore);
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────

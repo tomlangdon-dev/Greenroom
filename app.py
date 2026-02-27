@@ -54,10 +54,41 @@ def rename_folder(fid):
 @app.route("/api/folders/<int:fid>", methods=["DELETE"])
 def delete_folder(fid):
     conn = get_db()
+    ids = [fid]
+    queue = [fid]
+    while queue:
+        cur_id = queue.pop()
+        children = conn.execute("SELECT id FROM folders WHERE parent_id = ?", (cur_id,)).fetchall()
+        for c in children:
+            ids.append(c["id"])
+            queue.append(c["id"])
+    ph = ",".join(["?" for _ in ids])
+    assets = conn.execute("SELECT id FROM assets WHERE folder_id IN (" + ph + ")", ids).fetchall()
+    for a in assets:
+        versions = conn.execute("SELECT video_path, pptx_path FROM versions WHERE asset_id = ?", (a["id"],)).fetchall()
+        for v in versions:
+            for p in [v["video_path"], v["pptx_path"]]:
+                if p and os.path.exists(p): os.remove(p)
+        conn.execute("DELETE FROM assets WHERE id = ?", (a["id"],))
     conn.execute("DELETE FROM folders WHERE id = ?", (fid,))
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
+
+@app.route("/api/folders/<int:fid>/count")
+def folder_count(fid):
+    conn = get_db()
+    sql = (
+        "WITH RECURSIVE pf AS ("
+        "SELECT id FROM folders WHERE id = ? "
+        "UNION ALL "
+        "SELECT f.id FROM folders f INNER JOIN pf ON f.parent_id = pf.id) "
+        "SELECT COUNT(DISTINCT a.id) as total "
+        "FROM assets a WHERE a.folder_id IN (SELECT id FROM pf)"
+    )
+    row = conn.execute(sql, (fid,)).fetchone()
+    conn.close()
+    return jsonify({"count": row["total"] if row else 0})
 
 @app.route("/api/assets", methods=["GET"])
 def get_assets():
@@ -79,6 +110,16 @@ def delete_asset(aid):
         for p in [v["video_path"], v["pptx_path"]]:
             if p and os.path.exists(p): os.remove(p)
     conn.execute("DELETE FROM assets WHERE id = ?", (aid,))
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
+
+@app.route("/api/assets/<int:aid>", methods=["PUT"])
+def update_asset(aid):
+    data = request.get_json()
+    folder_id = data.get("folder_id")
+    conn = get_db()
+    conn.execute("UPDATE assets SET folder_id = ? WHERE id = ?", (folder_id, aid))
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
@@ -131,17 +172,6 @@ def upload():
     conn.close()
     return jsonify({"ok": True, "asset_id": asset_id, "version": version_number}), 201
 
-@app.route("/api/assets/<int:aid>", methods=["PUT"])
-def update_asset(aid):
-    data = request.get_json()
-    folder_id = data.get("folder_id")
-    conn = get_db()
-    conn.execute("UPDATE assets SET folder_id = ? WHERE id = ?", (folder_id, aid))
-    conn.commit()
-    conn.close()
-    return jsonify({"ok": True})
-
-
 @app.route("/api/versions/<int:vid>/report", methods=["POST"])
 def add_report(vid):
     pptx = request.files.get("pptx")
@@ -161,3 +191,29 @@ def add_report(vid):
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
+
+@app.route("/api/projects/stats")
+def project_stats():
+    conn = get_db()
+    projects = conn.execute("SELECT id FROM folders WHERE parent_id IS NULL").fetchall()
+    result = {}
+    sql = (
+        "WITH RECURSIVE pf AS ("
+        "SELECT id FROM folders WHERE id = ? "
+        "UNION ALL "
+        "SELECT f.id FROM folders f INNER JOIN pf ON f.parent_id = pf.id) "
+        "SELECT COUNT(DISTINCT a.id) as total, "
+        "SUM(CASE WHEN v.ace_score >= 67 THEN 1 ELSE 0 END) as green, "
+        "SUM(CASE WHEN v.ace_score >= 34 AND v.ace_score < 67 THEN 1 ELSE 0 END) as amber, "
+        "SUM(CASE WHEN v.ace_score IS NOT NULL AND v.ace_score < 34 THEN 1 ELSE 0 END) as red, "
+        "SUM(CASE WHEN v.ace_score IS NULL THEN 1 ELSE 0 END) as unscored "
+        "FROM assets a "
+        "LEFT JOIN versions v ON v.asset_id = a.id AND v.is_latest = 1 "
+        "WHERE a.folder_id IN (SELECT id FROM pf)"
+    )
+    for project in projects:
+        pid = project["id"]
+        row = conn.execute(sql, (pid,)).fetchone()
+        result[str(pid)] = dict(row) if row else {"total":0,"green":0,"amber":0,"red":0,"unscored":0}
+    conn.close()
+    return jsonify(result)
