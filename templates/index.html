@@ -7,7 +7,7 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f1f5f9;color:#1e293b;height:100vh;display:flex;flex-direction:column;overflow:hidden}
 .hdr{height:58px;background:white;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0;box-shadow:0 1px 3px rgba(0,0,0,.05)}
-.logo{font-size:17px;font-weight:700;color:#1e293b;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.logo{font-size:17px;font-weight:700;color:#1e293b;display:flex;align-items:center;gap:8px;white-space:nowrap;cursor:pointer}
 .breadcrumb{flex:1;font-size:13px;display:flex;align-items:center;flex-wrap:wrap;gap:2px}
 .bc-item{cursor:pointer;color:#64748b;transition:color .15s}
 .bc-item:hover{color:#6366f1}
@@ -17,8 +17,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .btn-primary{background:#6366f1;color:white}.btn-primary:hover{background:#4f46e5}
 .btn-ghost{background:transparent;color:#64748b;border:1px solid #e2e8f0}.btn-ghost:hover{background:#f1f5f9}
 .body{display:flex;flex:1;overflow:hidden}
-.sidebar{width:240px;background:#0f172a;flex-shrink:0;display:flex;flex-direction:column;overflow-y:auto;padding-bottom:16px}
-.slabel{padding:20px 16px 6px;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#334155;font-weight:700}
+#home-view{flex:1;overflow-y:auto;display:none}
+.home-toolbar{padding:32px 32px 20px;display:flex;align-items:center;justify-content:space-between}
+.home-title{font-size:22px;font-weight:700;color:#1e293b}
+.project-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px;padding:0 32px 32px}
+.project-card{background:white;border-radius:12px;padding:28px 24px;cursor:pointer;border:2px solid transparent;box-shadow:0 1px 3px rgba(0,0,0,.08);transition:all .2s;position:relative}
+.project-card:hover{border-color:#6366f1;transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.12)}
+.pc-icon{font-size:36px;margin-bottom:16px}
+.pc-name{font-size:17px;font-weight:700;color:#1e293b;margin-bottom:6px}
+.pc-meta{font-size:12px;color:#94a3b8}
+.home-empty{padding:80px 32px;text-align:center;color:#94a3b8}
+#project-view{flex:1;overflow:hidden;display:none;flex-direction:row}
+.sidebar{width:240px;background:#0f172a;flex-shrink:0;display:flex;flex-direction:column;overflow:hidden}
+.sidebar-proj-hdr{padding:12px 16px;border-bottom:1px solid #1e293b;flex-shrink:0}
+.back-home-btn{background:none;border:none;color:#64748b;cursor:pointer;font-size:12px;font-weight:600;padding:4px 0;display:flex;align-items:center;gap:6px;transition:color .15s;width:100%}
+.back-home-btn:hover{color:#e2e8f0}
+.sidebar-folders{flex:1;overflow-y:auto;padding-bottom:8px}
+.slabel{padding:16px 16px 6px;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#334155;font-weight:700}
 .frow{display:flex;align-items:center;padding:7px 8px 7px 12px;margin:1px 8px;border-radius:6px;cursor:pointer;color:#64748b;font-size:13px;transition:all .15s;border-left:3px solid transparent}
 .frow:hover{background:#1e293b;color:#cbd5e1}
 .frow.active{background:#1e293b;color:#e2e8f0;border-left-color:#6366f1}
@@ -28,10 +43,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .frow:hover .factions{display:flex}
 .ibtn{background:none;border:none;cursor:pointer;padding:2px 4px;border-radius:3px;font-size:11px;color:#475569;line-height:1}
 .ibtn:hover{background:#334155;color:#e2e8f0}
-.finput-row{margin:4px 8px}
+.finput-row{margin:4px 8px;flex-shrink:0}
 .finput{width:100%;padding:6px 10px;background:#1e293b;border:1px solid #6366f1;border-radius:6px;color:#e2e8f0;font-size:13px}
 .finput:focus{outline:none}
-.addbtn{margin:8px;padding:8px;background:none;border:1px dashed #1e293b;border-radius:6px;color:#334155;font-size:12px;cursor:pointer;width:calc(100% - 16px);transition:all .15s}
+.addbtn{margin:8px;padding:8px;background:none;border:1px dashed #1e293b;border-radius:6px;color:#334155;font-size:12px;cursor:pointer;width:calc(100% - 16px);transition:all .15s;flex-shrink:0}
 .addbtn:hover{border-color:#6366f1;color:#6366f1}
 .main{flex:1;overflow:hidden;display:flex;flex-direction:column}
 #grid-view{flex:1;overflow-y:auto}
@@ -48,15 +63,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .card{background:white;border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08);cursor:pointer;transition:all .2s;border:2px solid transparent}
 .card:hover{transform:translateY(-3px);box-shadow:0 8px 20px rgba(0,0,0,.12);border-color:#6366f1}
 .cthumb{height:120px;background:#0f172a;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
-.cthumb img { height:100%; width:auto; -webkit-user-drag:none; user-select:none; }
+.cthumb img{height:100%;width:auto;-webkit-user-drag:none;user-select:none}
 .cph{font-size:40px;opacity:.2}
 .ace{position:absolute;top:8px;right:8px;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:700}
 .ace.green{background:#10b981;color:white}.ace.amber{background:#f59e0b;color:white}.ace.red{background:#ef4444;color:white}.ace.none{background:rgba(255,255,255,.15);color:rgba(255,255,255,.7)}
-.card-menu{position:absolute;bottom:8px;left:8px;display:none;gap:4px}
-.card:hover .card-menu{display:flex}
-.cmb{background:rgba(15,23,42,.75);backdrop-filter:blur(4px);border:none;color:white;border-radius:4px;padding:4px 8px;cursor:pointer;font-size:10px;font-weight:600;transition:all .15s;line-height:1.4}
-.cmb:hover{background:rgba(15,23,42,.95)}
-.cmb.del:hover{background:#ef4444}
 .cbody{padding:12px}
 .cname{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:6px}
 .cmeta{display:flex;align-items:center;gap:8px}
@@ -71,7 +81,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .back-btn{background:none;border:none;font-size:13px;color:#6366f1;cursor:pointer;font-weight:600;padding:6px 10px;border-radius:6px;transition:all .15s;white-space:nowrap}
 .back-btn:hover{background:#f5f3ff}
 .detail-name{flex:1;font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ver-select{padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;color:#1e293b;cursor:pointer;background:white}
+.ver-select{padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;cursor:pointer;background:white}
 .ver-select:focus{outline:none;border-color:#6366f1}
 .detail-meta-bar{padding:10px 20px;display:flex;flex-wrap:wrap;gap:6px;border-bottom:1px solid #e2e8f0;background:white;flex-shrink:0}
 .meta-tag{background:#f1f5f9;color:#475569;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:500}
@@ -82,7 +92,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .ace-display{padding:24px 16px;text-align:center;border-bottom:1px solid #f1f5f9}
 .ace-num{font-size:64px;font-weight:700;line-height:1}
 .ace-lbl{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:#94a3b8;margin-top:4px;font-weight:600}
-.ace-stat{font-size:12px;font-weight:700;margin-top:6px;text-transform:uppercase;letter-spacing:0.5px;padding:4px 12px;border-radius:12px;display:inline-block}
+.ace-stat{font-size:12px;font-weight:700;margin-top:6px;text-transform:uppercase;padding:4px 12px;border-radius:12px;display:inline-block}
 .ace-green .ace-num{color:#10b981}.ace-green .ace-stat{background:#d1fae5;color:#065f46}
 .ace-amber .ace-num{color:#f59e0b}.ace-amber .ace-stat{background:#fef3c7;color:#92400e}
 .ace-red .ace-num{color:#ef4444}.ace-red .ace-stat{background:#fee2e2;color:#991b1b}
@@ -132,49 +142,62 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .move-opt{padding:10px 14px;cursor:pointer;font-size:13px;border-radius:6px;transition:all .15s;color:#1e293b}
 .move-opt:hover{background:#f5f3ff;color:#4f46e5}
 .move-opt.cur{opacity:.4;cursor:default;background:none}
-.cthumb img, .cph { transition: opacity 0.15s; }
-#ctx-menu{position:fixed;background:white;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.15);border:1px solid #e2e8f0;padding:4px;z-index:2000;min-width:160px}
+#ctx-menu,#proj-ctx-menu,#folder-ctx-menu{position:fixed;background:white;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.15);border:1px solid #e2e8f0;padding:4px;z-index:2000;min-width:160px;display:none}
 .ctx-item{padding:9px 14px;font-size:13px;cursor:pointer;border-radius:5px;color:#1e293b;transition:background .1s}
 .ctx-item:hover{background:#f1f5f9}
 .ctx-danger{color:#ef4444}
 .ctx-danger:hover{background:#fef2f2}
-.cthumb img { -webkit-user-drag: none; user-select: none; }
 </style>
 </head>
 <body>
+
 <div class="hdr">
-  <div class="logo">🎬 VAM</div>
+  <div class="logo" onclick="showHome()">🎬 VAM</div>
   <div class="breadcrumb" id="breadcrumb"></div>
-  <button class="btn btn-ghost" onclick="showFolderInput()">+ Folder</button>
-  <button class="btn btn-primary" id="upload-btn">⬆ Upload</button>
+  <div id="hdr-btns" style="display:flex;gap:8px"></div>
 </div>
+
 <div class="body">
-  <div class="sidebar">
-    <div class="slabel">Library</div>
-    <div id="folder-tree"></div>
-    <div class="finput-row" id="finput-row" style="display:none">
-      <input class="finput" id="finput" placeholder="Folder name..." onkeydown="handleFolderKey(event)">
+  <div id="home-view">
+    <div class="home-toolbar">
+      <div class="home-title">Projects</div>
     </div>
-    <button class="addbtn" onclick="showFolderInput()">+ New Folder</button>
+    <div class="project-grid" id="project-grid"></div>
   </div>
-  <div class="main">
-    <div id="grid-view">
-      <div class="mtoolbar">
-        <span class="mtitle" id="mtitle">Library</span>
-        <span class="mcount" id="mcount"></span>
+
+  <div id="project-view">
+    <div class="sidebar">
+      <div class="sidebar-proj-hdr">
+        <button class="back-home-btn" onclick="showHome()">← All Projects</button>
       </div>
-      <div class="grid" id="grid"></div>
+      <div class="sidebar-folders">
+        <div class="slabel">Folders</div>
+        <div id="folder-tree"></div>
+      </div>
+      <div class="finput-row" id="finput-row" style="display:none">
+        <input class="finput" id="finput" placeholder="Folder name..." onkeydown="handleFolderKey(event)">
+      </div>
+      <button class="addbtn" onclick="showFolderInput()">+ New Folder</button>
     </div>
-    <div id="detail-view">
-      <div class="detail-hdr">
-        <button class="back-btn" onclick="closeDetail()">← Back</button>
-        <span class="detail-name" id="detail-name"></span>
-        <select class="ver-select" id="version-select" onchange="switchVersion(this.value)"></select>
+    <div class="main">
+      <div id="grid-view">
+        <div class="mtoolbar">
+          <span class="mtitle" id="mtitle"></span>
+          <span class="mcount" id="mcount"></span>
+        </div>
+        <div class="grid" id="grid"></div>
       </div>
-      <div class="detail-meta-bar" id="detail-meta"></div>
-      <div class="detail-cols">
-        <div class="vcol"><video id="video-player" controls=""></video></div>
-        <div class="scol"><div id="scores-content"></div></div>
+      <div id="detail-view">
+        <div class="detail-hdr">
+          <button class="back-btn" onclick="closeDetail()">← Back</button>
+          <span class="detail-name" id="detail-name"></span>
+          <select class="ver-select" id="version-select" onchange="switchVersion(this.value)"></select>
+        </div>
+        <div class="detail-meta-bar" id="detail-meta"></div>
+        <div class="detail-cols">
+          <div class="vcol"><video id="video-player" controls=""></video></div>
+          <div class="scol"><div id="scores-content"></div></div>
+        </div>
       </div>
     </div>
   </div>
@@ -234,11 +257,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
   </div>
 </div>
 
+<div id="ctx-menu">
+  <div class="ctx-item" onclick="hideCtx();moveAsset(ctxId)">📁 Move to folder...</div>
+  <div class="ctx-item ctx-danger" onclick="var id=ctxId;hideCtx();deleteAssetCard(id)">🗑 Delete</div>
+</div>
+
+<div id="proj-ctx-menu">
+<div class="ctx-item" onclick="renameProjCtx();hideProjCtx()">✏️ Rename project</div>
+<div class="ctx-item ctx-danger" onclick="deleteProjCtx();hideProjCtx()">🗑 Delete project</div>
+</div>
+
+<div id="folder-ctx-menu">
+<div class="ctx-item" onclick="folderCtxRename();hideFolderCtx()">✏️ Rename</div>
+<div class="ctx-item ctx-danger" onclick="folderCtxDelete();hideFolderCtx()">🗑 Delete</div>
+</div>
+
 <script>
-var state = { folderId: null, folders: [], assets: [], currentAsset: null, draggingAssetId: null };
-var uploadFiles = { video: null, pptx: null };
-var moveAssetId = null;
-var dragCounter = 0;
+var state = { folderId:null, projectId:null, folders:[], assets:[], currentAsset:null, draggingAssetId:null };
+var uploadFiles = { video:null, pptx:null };
+var ctxId = null, projCtxId = null, moveAssetId = null, dragCounter = 0;
 var colorValues = { red:0, amber:50, green:100 };
 
 async function api(url, opts) {
@@ -248,99 +285,172 @@ async function api(url, opts) {
 
 async function loadFolders() {
   state.folders = await api("/api/folders");
-  renderSidebar();
+}
+
+// ── Home ─────────────────────────────────────────────────────────────────────
+function showHome() {
+  pauseVideo();
+  state.folderId = null;
+  state.projectId = null;
+  state.assets = [];
+  document.getElementById("detail-view").style.display = "none";
+  document.getElementById("grid-view").style.display = "block";
+  document.getElementById("home-view").style.display = "block";
+  document.getElementById("project-view").style.display = "none";
+  document.getElementById("breadcrumb").innerHTML = "";
+  document.getElementById("hdr-btns").innerHTML = '<button class="btn btn-primary" onclick="newProject()">+ New Project</button>';
+  renderHome();
+}
+
+function renderHome() {
+  var grid = document.getElementById("project-grid");
+  var projects = state.folders.filter(function(f){ return !f.parent_id; });
+  if (!projects.length) {
+    grid.innerHTML = '<div class="home-empty"><div style="font-size:64px;margin-bottom:20px">📁</div><div style="font-size:20px;font-weight:600;color:#64748b;margin-bottom:8px">No projects yet</div><div style="font-size:14px;color:#94a3b8">Click + New Project to get started</div></div>';
+    return;
+  }
+  grid.innerHTML = projects.map(function(f){
+    var subs = state.folders.filter(function(c){ return c.parent_id === f.id; }).length;
+    var h = '<div class="project-card" data-id="'+f.id+'" onclick="enterProject('+f.id+')">';
+    h += '<div class="pc-icon">📁</div>';
+    h += '<div class="pc-name">'+f.name+'</div>';
+    h += '<div class="pc-meta">'+(subs ? subs+' folder'+(subs!==1?'s':'') : 'Empty project')+'</div>';
+    h += '</div>';
+    return h;
+  }).join("");
+  grid.querySelectorAll(".project-card").forEach(function(card) {
+    card.addEventListener("contextmenu", function(e) { e.preventDefault(); showProjCtx(e, parseInt(card.dataset.id)); });
+  });
+}
+
+async function newProject() {
+  var name = prompt("Project name:");
+  if (!name || !name.trim()) return;
+  await api("/api/folders", {method:"POST", body:JSON.stringify({name:name.trim(), parent_id:null})});
+  await loadFolders();
+  renderHome();
+}
+
+function showProjCtx(e, id) {
+  projCtxId = id;
+  var m = document.getElementById("proj-ctx-menu");
+  m.style.display = "block";
+  m.style.left = e.clientX+"px"; m.style.top = e.clientY+"px";
+  var r = m.getBoundingClientRect();
+  if (r.right > window.innerWidth) m.style.left = (e.clientX-r.width)+"px";
+  if (r.bottom > window.innerHeight) m.style.top = (e.clientY-r.height)+"px";
+}
+function hideProjCtx() { document.getElementById("proj-ctx-menu").style.display="none"; projCtxId=null; }
+async function renameProjCtx() {
+  if (!projCtxId) return;
+  var f = state.folders.find(function(x){ return x.id===projCtxId; });
+  var name = prompt("Rename project:", f?f.name:"");
+  if (!name || name===(f&&f.name)) return;
+  await api("/api/folders/"+projCtxId, {method:"PUT", body:JSON.stringify({name:name})});
+  await loadFolders();
+  renderHome();
+}
+async function deleteProjCtx() {
+  if (!projCtxId) return;
+  var f = state.folders.find(function(x){ return x.id===projCtxId; });
+  if (!confirm('Delete project "'+(f?f.name:"")+'"\nThis will delete all folders and assets inside it. Cannot be undone.')) return;
+  await api("/api/folders/"+projCtxId, {method:"DELETE"});
+  await loadFolders();
+  renderHome();
+}
+
+// ── Project View ──────────────────────────────────────────────────────────────
+function enterProject(id) {
+  state.projectId = id;
+  document.getElementById("home-view").style.display = "none";
+  document.getElementById("project-view").style.display = "flex";
+  loadAssets(id);
 }
 
 async function loadAssets(fid) {
   state.folderId = (fid !== undefined) ? fid : null;
-
-  // Close detail view if open
-  var dv = document.getElementById("detail-view");
-  if (dv.style.display !== "none") {
-    document.getElementById("video-player").pause();
-    document.getElementById("video-player").src = "";
-    dv.style.display = "none";
-    document.getElementById("grid-view").style.display = "block";
-  }
-
-  var url = fid ? "/api/assets?folder_id=" + fid : "/api/assets";
+  pauseVideo();
+  document.getElementById("detail-view").style.display = "none";
+  document.getElementById("grid-view").style.display = "block";
+  var url = fid ? "/api/assets?folder_id="+fid : "/api/assets";
   state.assets = await api(url);
   renderSidebar();
   renderGrid();
   renderBreadcrumb();
 }
 
+function pauseVideo() {
+  var p = document.getElementById("video-player");
+  if (p) { p.pause(); p.src = ""; }
+}
+
 function renderBreadcrumb() {
+  var bc = document.getElementById("breadcrumb");
+  var btns = document.getElementById("hdr-btns");
+  if (!state.projectId) { bc.innerHTML=""; return; }
+  var project = state.folders.find(function(f){ return f.id===state.projectId; });
   var path = [];
   var id = state.folderId;
-  while (id) {
-    var folder = state.folders.find(function(f){ return f.id === id; });
+  while (id && id !== state.projectId) {
+    var folder = state.folders.find(function(f){ return f.id===id; });
     if (!folder) break;
-    path.unshift({ id: folder.id, name: folder.name });
+    path.unshift({id:folder.id, name:folder.name});
     id = folder.parent_id;
   }
-  var bc = document.getElementById("breadcrumb");
-  if (!path.length) {
-    bc.innerHTML = '<span class="bc-cur">Library</span>';
-    document.getElementById("mtitle").textContent = "Library";
-    return;
+  var html = '<span class="bc-item" onclick="showHome()">Projects</span><span class="bc-sep">›</span>';
+  if (state.folderId === state.projectId) {
+    html += '<span class="bc-cur">'+(project?project.name:'')+'</span>';
+  } else {
+    html += '<span class="bc-item" onclick="loadAssets('+state.projectId+')">'+(project?project.name:'')+'</span>';
   }
-  var html = '<span class="bc-item" onclick="loadAssets(null)">Library</span>';
   path.forEach(function(item, i) {
     html += '<span class="bc-sep">›</span>';
-    if (i === path.length - 1) {
-      html += '<span class="bc-cur">'+item.name+'</span>';
-    } else {
-      html += '<span class="bc-item" onclick="loadAssets('+item.id+')">'+item.name+'</span>';
-    }
+    html += (i===path.length-1) ? '<span class="bc-cur">'+item.name+'</span>' : '<span class="bc-item" onclick="loadAssets('+item.id+')">'+item.name+'</span>';
   });
   bc.innerHTML = html;
-  document.getElementById("mtitle").textContent = path[path.length-1].name;
+  document.getElementById("mtitle").textContent = path.length ? path[path.length-1].name : (project?project.name:'');
+  btns.innerHTML = '<button class="btn btn-ghost" onclick="showFolderInput()">+ Folder</button><button class="btn btn-primary" onclick="showUpload()">⬆ Upload</button>';
 }
 
 function renderSidebar() {
   var tree = document.getElementById("folder-tree");
   tree.innerHTML = "";
-  tree.appendChild(makeRow(null, "All Assets", 0));
-  state.folders.filter(function(f){ return !f.parent_id; }).forEach(function(f){ addFolder(f, tree, 1); });
+  if (!state.projectId) return;
+  state.folders.filter(function(f){ return f.parent_id===state.projectId; }).forEach(function(f){ addFolder(f,tree,0); });
 }
 
 function makeRow(id, label, depth) {
   var row = document.createElement("div");
-  row.className = "frow" + (state.folderId === id ? " active" : "");
-  row.style.paddingLeft = (12 + depth * 14) + "px";
-  var acts = id ? '<span class="factions"><button class="ibtn" onclick="event.stopPropagation();renameF('+id+')">✏️</button><button class="ibtn" onclick="event.stopPropagation();deleteF('+id+')">🗑</button></span>' : "";
+  row.className = "frow"+(state.folderId===id?" active":"");
+  row.style.paddingLeft = (12+depth*14)+"px";
+  var acts = '<span class="factions"><button class="ibtn" onclick="event.stopPropagation();renameF('+id+')">✏️</button><button class="ibtn" onclick="event.stopPropagation();deleteF('+id+')">🗑</button></span>';
   row.innerHTML = '<span class="ficon">📁</span><span class="fname">'+label+'</span>'+acts;
   row.onclick = function() { loadAssets(id); };
   return row;
 }
-
 function addFolder(folder, container, depth) {
   container.appendChild(makeRow(folder.id, folder.name, depth));
-  state.folders.filter(function(f){ return f.parent_id === folder.id; }).forEach(function(c){ addFolder(c, container, depth+1); });
+  state.folders.filter(function(f){ return f.parent_id===folder.id; }).forEach(function(c){ addFolder(c,container,depth+1); });
 }
 
 function renderGrid() {
   var grid = document.getElementById("grid");
-  var subFolders = state.folders.filter(function(f){ return f.parent_id === state.folderId; });
-  var total = subFolders.length + state.assets.length;
+  var subFolders = state.folders.filter(function(f){ return f.parent_id===state.folderId; });
   var parts = [];
   if (subFolders.length) parts.push(subFolders.length+" folder"+(subFolders.length!==1?"s":""));
   if (state.assets.length) parts.push(state.assets.length+" asset"+(state.assets.length!==1?"s":""));
   document.getElementById("mcount").textContent = parts.join(", ");
-  if (!total) {
+  if (!subFolders.length && !state.assets.length) {
     grid.innerHTML = '<div class="empty"><div class="eicon">📁</div><div class="etitle">This folder is empty</div><div class="esub">Upload a video or create a sub-folder</div></div>';
     return;
   }
-  grid.innerHTML = subFolders.map(makeFolderCard).join("") + state.assets.map(makeCard).join("");
-  grid.querySelectorAll(".card[data-video]").forEach(function(card) {
-if (card.dataset.video) initCardPreview(card);
-});
+  grid.innerHTML = subFolders.map(makeFolderCard).join("")+state.assets.map(makeCard).join("");
+  grid.querySelectorAll(".card[data-video]").forEach(function(card){ if(card.dataset.video) initCardPreview(card); });
 }
 
 function makeFolderCard(folder) {
-  var subs = state.folders.filter(function(f){ return f.parent_id === folder.id; }).length;
-  var h = '<div class="folder-card" onclick="loadAssets('+folder.id+')" ondragover="folderDragOver(event,this)" ondragleave="folderDragLeave(this)" ondrop="folderDrop(event,'+folder.id+')">';
+  var subs = state.folders.filter(function(f){ return f.parent_id===folder.id; }).length;
+  var h = '<div class="folder-card" onclick="loadAssets('+folder.id+')" oncontextmenu="showFolderCtx(event,'+folder.id+')" ondragover="folderDragOver(event,this)" ondragleave="folderDragLeave(this)" ondrop="folderDrop(event,'+folder.id+')">';
   h += '<div class="fc-thumb">📁</div>';
   h += '<div class="fc-body"><div class="fc-name">'+folder.name+'</div>';
   if (subs) h += '<div class="fc-meta">'+subs+' sub-folder'+(subs!==1?'s':'')+'</div>';
@@ -353,10 +463,9 @@ function makeCard(a) {
   var cls = s===null?"none":s>=67?"green":s>=34?"amber":"red";
   var thumb = a.thumbnail ? '<img src="'+a.thumbnail+'" alt="" draggable="false">' : '<span class="cph">🎬</span>';
   var date = a.uploaded_at ? new Date(a.uploaded_at).toLocaleDateString("en-GB",{day:"numeric",month:"short"}) : "";
-  var ace = s !== null ? "ACE "+s : "No score";
+  var ace = s!==null?"ACE "+s:"No score";
   var h = '<div class="card" data-video="'+(a.video_filename||'')+'" draggable="true" onclick="openAsset('+a.id+')" oncontextmenu="showCtx(event,'+a.id+')" ondragstart="cardDragStart(event,'+a.id+')" ondragend="cardDragEnd()">';
-  h += '<div class="cthumb">'+thumb+'<span class="ace '+cls+'">'+ace+'</span>';
-  h += '</div>';
+  h += '<div class="cthumb">'+thumb+'<span class="ace '+cls+'">'+ace+'</span></div>';
   h += '<div class="cbody"><div class="cname" title="'+a.base_name+'">'+a.base_name+'</div>';
   h += '<div class="cmeta"><span class="vtag">v'+(a.latest_version||1)+'</span><span class="cdate">'+date+'</span></div>';
   h += '</div></div>';
@@ -368,43 +477,45 @@ function handleFolderKey(e) { if(e.key==="Enter") saveFolder(); if(e.key==="Esca
 async function saveFolder() {
   var name = document.getElementById("finput").value.trim();
   if (!name) { hideFolderInput(); return; }
-  await api("/api/folders", {method:"POST",body:JSON.stringify({name:name,parent_id:state.folderId})});
+  await api("/api/folders", {method:"POST", body:JSON.stringify({name:name, parent_id:state.folderId})});
   hideFolderInput();
   await loadFolders();
   renderGrid();
+  renderSidebar();
 }
 function hideFolderInput() { document.getElementById("finput-row").style.display="none"; document.getElementById("finput").value=""; }
 
 async function deleteF(id) {
   if (!confirm("Delete this folder? Assets inside will move to root.")) return;
   await api("/api/folders/"+id, {method:"DELETE"});
-  if (state.folderId===id) state.folderId = null;
+  if (state.folderId===id) state.folderId = state.projectId;
   await loadFolders();
   loadAssets(state.folderId);
 }
 async function renameF(id) {
-  var folder = state.folders.find(function(f){ return f.id===id; });
-  var name = prompt("Rename:", folder?folder.name:"");
-  if (!name || name===(folder&&folder.name)) return;
-  await api("/api/folders/"+id, {method:"PUT",body:JSON.stringify({name:name})});
+  var f = state.folders.find(function(x){ return x.id===id; });
+  var name = prompt("Rename:", f?f.name:"");
+  if (!name || name===(f&&f.name)) return;
+  await api("/api/folders/"+id, {method:"PUT", body:JSON.stringify({name:name})});
   await loadFolders();
+  renderSidebar();
   renderBreadcrumb();
 }
-
 async function deleteAssetCard(id) {
-  var asset = state.assets.find(function(a){ return a.id===id; });
-  if (!confirm('Delete "' + (asset?asset.base_name:"this asset") + '"? Cannot be undone.')) return;
+  var a = state.assets.find(function(x){ return x.id===id; });
+  if (!confirm('Delete "'+(a?a.base_name:"this asset")+'"? Cannot be undone.')) return;
   await api("/api/assets/"+id, {method:"DELETE"});
   loadAssets(state.folderId);
 }
 
+// ── Move ──────────────────────────────────────────────────────────────────────
 function moveAsset(assetId) {
   moveAssetId = assetId;
   var asset = state.assets.find(function(a){ return a.id===assetId; });
   var list = document.getElementById("move-list");
   var html = '<div class="move-opt'+(state.folderId===null?" cur":"")+'" onclick="submitMove('+assetId+',null)">📂 Root (no folder)</div>';
   function addOpt(folder, depth) {
-    var isCur = asset && asset.folder_id === folder.id;
+    var isCur = asset && asset.folder_id===folder.id;
     html += '<div class="move-opt'+(isCur?" cur":"")+'" style="padding-left:'+(14+depth*16)+'px" onclick="submitMove('+assetId+','+folder.id+')">📁 '+folder.name+'</div>';
     state.folders.filter(function(f){ return f.parent_id===folder.id; }).forEach(function(c){ addOpt(c,depth+1); });
   }
@@ -412,114 +523,113 @@ function moveAsset(assetId) {
   list.innerHTML = html;
   document.getElementById("move-modal").style.display = "block";
 }
-
 function closeMoveModal() { document.getElementById("move-modal").style.display="none"; moveAssetId=null; }
-
 async function submitMove(assetId, folderId) {
   await fetch("/api/assets/"+assetId, {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({folder_id:folderId})});
   closeMoveModal();
   loadAssets(state.folderId);
 }
 
-// ── Asset Detail ─────────────────────────────────────────────────────────────
+// ── Context Menus ─────────────────────────────────────────────────────────────
+function showCtx(e, id) {
+  e.preventDefault(); e.stopPropagation(); ctxId=id;
+  var m=document.getElementById("ctx-menu"); m.style.display="block";
+  m.style.left=e.clientX+"px"; m.style.top=e.clientY+"px";
+  var r=m.getBoundingClientRect();
+  if(r.right>window.innerWidth) m.style.left=(e.clientX-r.width)+"px";
+  if(r.bottom>window.innerHeight) m.style.top=(e.clientY-r.height)+"px";
+}
+function hideCtx() { document.getElementById("ctx-menu").style.display="none"; ctxId=null; }
+document.addEventListener("click", function(e){
+if(!e.target.closest("#ctx-menu")) hideCtx();
+if(!e.target.closest("#proj-ctx-menu")) hideProjCtx();
+if(!e.target.closest("#folder-ctx-menu")) hideFolderCtx();
+});
+
+// ── Detail View ───────────────────────────────────────────────────────────────
 async function openAsset(id) {
   var versions = await api("/api/versions/"+id);
   if (!versions.length) return;
   var asset = state.assets.find(function(a){ return a.id===id; });
   state.currentAsset = {id:id, versions:versions, asset:asset};
   renderDetail(asset, versions[0]);
-  document.getElementById("grid-view").style.display = "none";
-  document.getElementById("detail-view").style.display = "flex";
+  document.getElementById("grid-view").style.display="none";
+  document.getElementById("detail-view").style.display="flex";
 }
-
 function closeDetail() {
-  document.getElementById("video-player").pause();
-  document.getElementById("video-player").src = "";
-  document.getElementById("detail-view").style.display = "none";
-  document.getElementById("grid-view").style.display = "block";
+  pauseVideo();
+  document.getElementById("detail-view").style.display="none";
+  document.getElementById("grid-view").style.display="block";
 }
-
 function renderDetail(asset, version) {
-  var info = {};
-  try { if(version.asset_info) info=JSON.parse(version.asset_info); } catch(e){}
+  var info={};
+  try{if(version.asset_info)info=JSON.parse(version.asset_info);}catch(e){}
   document.getElementById("detail-name").textContent = asset.base_name;
-  var sel = document.getElementById("version-select");
-  sel.innerHTML = state.currentAsset.versions.map(function(v){
+  var sel=document.getElementById("version-select");
+  sel.innerHTML=state.currentAsset.versions.map(function(v){
     return '<option value="'+v.id+'"'+(v.id===version.id?" selected":"")+'>v'+v.version_number+(v.is_latest?" (latest)":"")+'</option>';
   }).join("");
-  var player = document.getElementById("video-player");
-  player.src = version.video_filename ? "/uploads/videos/"+version.video_filename : "";
+  var player=document.getElementById("video-player");
+  player.src=version.video_filename?"/uploads/videos/"+version.video_filename:"";
   player.load();
-  var tags = [];
-  if (info.brand) tags.push("🏷️ "+info.brand);
-  if (info.platform) tags.push("📱 "+info.platform);
-  if (info.company) tags.push("🏢 "+info.company);
-  if (info.date) tags.push("📅 "+info.date);
-  var mb = document.getElementById("detail-meta");
-  mb.innerHTML = tags.map(function(t){ return '<span class="meta-tag">'+t+'</span>'; }).join("");
-  mb.style.display = tags.length ? "flex" : "none";
+  var tags=[];
+  if(info.brand) tags.push("🏷️ "+info.brand);
+  if(info.platform) tags.push("📱 "+info.platform);
+  if(info.company) tags.push("🏢 "+info.company);
+  if(info.date) tags.push("📅 "+info.date);
+  var mb=document.getElementById("detail-meta");
+  mb.innerHTML=tags.map(function(t){ return '<span class="meta-tag">'+t+'</span>'; }).join("");
+  mb.style.display=tags.length?"flex":"none";
   renderScores(version);
 }
-
 async function switchVersion(versionId) {
-  var version = state.currentAsset.versions.find(function(v){ return v.id===parseInt(versionId); });
-  if (version) renderDetail(state.currentAsset.asset, version);
+  var v=state.currentAsset.versions.find(function(x){ return x.id===parseInt(versionId); });
+  if(v) renderDetail(state.currentAsset.asset,v);
 }
-
 function renderScores(version) {
-  var el = document.getElementById("scores-content");
-  if (!version.kpi_data||!version.ace_score) { el.innerHTML='<div class="no-score">No Brainsuite report paired<br>with this version</div>'; return; }
-  var cats; try { cats=JSON.parse(version.kpi_data); } catch(e) { el.innerHTML='<div class="no-score">Could not read score data</div>'; return; }
-  var ace=version.ace_score, ac=ace>=67?"ace-green":ace>=34?"ace-amber":"ace-red", as=ace>=67?"Green":ace>=34?"Amber":"Red";
-  var html='<div class="ace-display '+ac+'"><div class="ace-num">'+ace+'</div><div class="ace-lbl">ACE Score</div><div class="ace-stat">'+as+'</div></div>';
-  html+='<div class="cats">';
+  var el=document.getElementById("scores-content");
+  if(!version.kpi_data||!version.ace_score){el.innerHTML='<div class="no-score">No Brainsuite report paired<br>with this version</div>';return;}
+  var cats;try{cats=JSON.parse(version.kpi_data);}catch(e){el.innerHTML='<div class="no-score">Could not read score data</div>';return;}
+  var ace=version.ace_score,ac=ace>=67?"ace-green":ace>=34?"ace-amber":"ace-red",as=ace>=67?"Green":ace>=34?"Amber":"Red";
+  var html='<div class="ace-display '+ac+'"><div class="ace-num">'+ace+'</div><div class="ace-lbl">ACE Score</div><div class="ace-stat">'+as+'</div></div><div class="cats">';
   Object.keys(cats).forEach(function(key){
-    var cat=cats[key], sum=cat.kpis.reduce(function(a,k){ return a+colorValues[k.original]; },0), score=Math.round(sum/cat.kpis.length);
+    var cat=cats[key],sum=cat.kpis.reduce(function(a,k){return a+colorValues[k.original];},0),score=Math.round(sum/cat.kpis.length);
     var sc=score>=67?"cg":score>=34?"ca":"cr";
     html+='<div class="cat-sec"><div class="cat-hdr" onclick="toggleCat(\''+key+'\')"><span class="cat-nm">'+cat.name+'</span><span class="cat-wt">×'+cat.weight+'</span><span class="cat-sc '+sc+'">'+score+'</span><span class="cat-chv" id="chev-'+key+'">▼</span></div>';
     html+='<div class="cat-kpis" id="kpis-'+key+'" style="display:none">';
-    cat.kpis.forEach(function(kpi){ var bc=kpi.original==="green"?"kg":kpi.original==="amber"?"kam":"kred"; html+='<div class="kpi-row"><span class="kpi-nm">'+kpi.name+'</span><span class="kpi-badge '+bc+'">'+kpi.value+'</span></div>'; });
+    cat.kpis.forEach(function(kpi){var bc=kpi.original==="green"?"kg":kpi.original==="amber"?"kam":"kred";html+='<div class="kpi-row"><span class="kpi-nm">'+kpi.name+'</span><span class="kpi-badge '+bc+'">'+kpi.value+'</span></div>';});
     html+='</div></div>';
   });
-  html+='</div>';
-  el.innerHTML=html;
+  el.innerHTML=html+'</div>';
+}
+function toggleCat(key){
+  var el=document.getElementById("kpis-"+key),chev=document.getElementById("chev-"+key),open=el.style.display==="none";
+  el.style.display=open?"block":"none";chev.className="cat-chv"+(open?" open":"");
 }
 
-function toggleCat(key) {
-  var el=document.getElementById("kpis-"+key), chev=document.getElementById("chev-"+key), open=el.style.display==="none";
-  el.style.display=open?"block":"none"; chev.className="cat-chv"+(open?" open":"");
-}
-
-document.addEventListener("keydown", function(e){ if(e.key==="Escape"){ closeDetail(); closeUpload(); closeMoveModal(); hideCtx(); } });
-document.getElementById("modal-overlay").addEventListener("click", function(e){ if(e.target===this) closeUpload(); });
-document.getElementById("move-overlay").addEventListener("click", function(e){ if(e.target===this) closeMoveModal(); });
-document.addEventListener("click", function(e) {
-if (!e.target.closest("#ctx-menu")) hideCtx();
-});
-
-// ── Upload ───────────────────────────────────────────────────────────────────
-function showUpload() {
+// ── Upload ────────────────────────────────────────────────────────────────────
+function showUpload(){
+  if(!state.projectId){alert("Please open a project first.");return;}
   uploadFiles={video:null,pptx:null};
-  document.getElementById("video-fname").textContent="";
-  document.getElementById("pptx-fname").textContent="";
-  document.getElementById("upstatus").style.display="none";
-  document.getElementById("upload-submit").disabled=false;
+  document.getElementById("video-fname").textContent="";document.getElementById("pptx-fname").textContent="";
+  document.getElementById("upstatus").style.display="none";document.getElementById("upload-submit").disabled=false;
   document.getElementById("upload-modal").style.display="block";
 }
-function closeUpload() { document.getElementById("upload-modal").style.display="none"; }
-function filePicked(type,input) { if(!input.files[0]) return; uploadFiles[type]=input.files[0]; document.getElementById(type+"-fname").textContent="✓ "+input.files[0].name; }
-function dzOver(e,id) { e.preventDefault(); document.getElementById(id).classList.add("over"); }
-function dzOut(id) { document.getElementById(id).classList.remove("over"); }
-function dzDrop(e,type) {
-  e.preventDefault(); dzOut(type+"-dz");
-  var f=e.dataTransfer.files[0]; if(!f) return;
+function closeUpload(){document.getElementById("upload-modal").style.display="none";}
+document.getElementById("modal-overlay").addEventListener("click",function(e){if(e.target===this)closeUpload();});
+document.getElementById("move-overlay").addEventListener("click",function(e){if(e.target===this)closeMoveModal();});
+function filePicked(type,input){if(!input.files[0])return;uploadFiles[type]=input.files[0];document.getElementById(type+"-fname").textContent="✓ "+input.files[0].name;}
+function dzOver(e,id){e.preventDefault();document.getElementById(id).classList.add("over");}
+function dzOut(id){document.getElementById(id).classList.remove("over");}
+function dzDrop(e,type){
+  e.preventDefault();dzOut(type+"-dz");
+  var f=e.dataTransfer.files[0];if(!f)return;
   var ok=type==="video"?/\.(mp4|mov|avi|webm|mkv)$/i.test(f.name):/\.pptx$/i.test(f.name);
   if(!ok){setStatus("Wrong file type for "+type,"error");return;}
-  uploadFiles[type]=f; document.getElementById(type+"-fname").textContent="✓ "+f.name;
+  uploadFiles[type]=f;document.getElementById(type+"-fname").textContent="✓ "+f.name;
 }
-function setStatus(msg,type) { var el=document.getElementById("upstatus"); el.style.display="block"; el.className="upstatus "+type; el.textContent=msg; }
-
-async function submitUpload() {
+function setStatus(msg,type){var el=document.getElementById("upstatus");el.style.display="block";el.className="upstatus "+type;el.textContent=msg;}
+async function submitUpload(){
   if(!uploadFiles.video){setStatus("Please select a video file","error");return;}
   document.getElementById("upload-submit").disabled=true;
   setStatus("Processing...","info");
@@ -528,23 +638,20 @@ async function submitUpload() {
     try{
       setStatus("Parsing Brainsuite report...","info");
       var parsed=await parsePPTX(uploadFiles.pptx);
-      aceScore=calcACE(parsed.categories); scoresJson=JSON.stringify(parsed.categories);
-      assetInfoJson=JSON.stringify(parsed.assetInfo); thumbnail=parsed.assetInfo.thumbnail||null;
+      aceScore=calcACE(parsed.categories);scoresJson=JSON.stringify(parsed.categories);
+      assetInfoJson=JSON.stringify(parsed.assetInfo);thumbnail=parsed.assetInfo.thumbnail||null;
     }catch(err){console.error(err);setStatus("Could not parse PPTX — uploading video only","info");}
   }
-  if (!thumbnail && uploadFiles.video) {
-    setStatus("Generating thumbnail...", "info");
-    thumbnail = await generateVideoThumbnail(uploadFiles.video);
-}
+  if(!thumbnail&&uploadFiles.video){setStatus("Generating thumbnail...","info");thumbnail=await generateVideoThumbnail(uploadFiles.video);}
   setStatus("Uploading...","info");
   var form=new FormData();
   form.append("video",uploadFiles.video);
-  if(uploadFiles.pptx) form.append("pptx",uploadFiles.pptx);
-  if(state.folderId) form.append("folder_id",state.folderId);
-  if(scoresJson) form.append("scores",scoresJson);
-  if(assetInfoJson) form.append("asset_info",assetInfoJson);
-  if(thumbnail) form.append("thumbnail",thumbnail);
-  if(aceScore!==null) form.append("ace_score",aceScore);
+  if(uploadFiles.pptx)form.append("pptx",uploadFiles.pptx);
+  if(state.folderId)form.append("folder_id",state.folderId);
+  if(scoresJson)form.append("scores",scoresJson);
+  if(assetInfoJson)form.append("asset_info",assetInfoJson);
+  if(thumbnail)form.append("thumbnail",thumbnail);
+  if(aceScore!==null)form.append("ace_score",aceScore);
   try{
     var res=await fetch("/api/upload",{method:"POST",body:form});
     var data=await res.json();
@@ -553,46 +660,115 @@ async function submitUpload() {
   }catch(err){setStatus("Error: "+err.message,"error");document.getElementById("upload-submit").disabled=false;}
 }
 
+// ── Drag & Drop ───────────────────────────────────────────────────────────────
+function cardDragStart(e,id){
+  state.draggingAssetId=id;e.dataTransfer.setData("assetId",id);e.dataTransfer.effectAllowed="move";
+  var card=e.currentTarget,clone=card.cloneNode(true);
+  clone.querySelectorAll("video").forEach(function(v){v.remove();});
+  clone.style.transform="none";clone.style.width=card.offsetWidth+"px";
+  clone.style.position="absolute";clone.style.top="-9999px";clone.style.opacity="0.85";
+  document.body.appendChild(clone);e.dataTransfer.setDragImage(clone,e.offsetX,e.offsetY);
+  setTimeout(function(){document.body.removeChild(clone);},0);
+}
+function cardDragEnd(){state.draggingAssetId=null;}
+function folderDragOver(e,el){if(!state.draggingAssetId)return;e.preventDefault();el.style.outline="3px solid #6366f1";}
+function folderDragLeave(el){el.style.outline="";}
+async function folderDrop(e,folderId){
+  e.preventDefault();folderDragLeave(e.currentTarget);
+  if(!state.draggingAssetId)return;
+  await submitMove(state.draggingAssetId,folderId);state.draggingAssetId=null;
+}
 window.addEventListener("dragenter",function(e){
-  if (state.draggingAssetId) return;  
-  if(document.getElementById("upload-modal").style.display==="block"||document.getElementById("move-modal").style.display==="block") return;
-  dragCounter++; if(dragCounter===1) document.getElementById("drag-overlay").classList.add("active");
+  if(state.draggingAssetId)return;
+  if(document.getElementById("upload-modal").style.display==="block"||document.getElementById("move-modal").style.display==="block")return;
+  if(!e.dataTransfer||!Array.from(e.dataTransfer.types||[]).includes("Files"))return;
+  dragCounter++;if(dragCounter===1)document.getElementById("drag-overlay").classList.add("active");
 });
 window.addEventListener("dragleave",function(){
-if (state.draggingAssetId) return; 
-dragCounter--; if(dragCounter<=0){dragCounter=0;document.getElementById("drag-overlay").classList.remove("active");} 
+  if(state.draggingAssetId)return;
+  dragCounter--;if(dragCounter<=0){dragCounter=0;document.getElementById("drag-overlay").classList.remove("active");}
 });
 window.addEventListener("dragover",function(e){e.preventDefault();});
 window.addEventListener("drop",function(e){
-  e.preventDefault(); dragCounter=0; document.getElementById("drag-overlay").classList.remove("active");
-  if(document.getElementById("upload-modal").style.display==="block") return;
+  e.preventDefault();dragCounter=0;document.getElementById("drag-overlay").classList.remove("active");
+  if(state.draggingAssetId)return;
+  if(document.getElementById("upload-modal").style.display==="block")return;
+  if(!state.projectId)return;
   var files=Array.from(e.dataTransfer.files);
   var video=files.find(function(f){return /\.(mp4|mov|avi|webm|mkv)$/i.test(f.name);});
   var pptx=files.find(function(f){return /\.pptx$/i.test(f.name);});
-  if(!video&&!pptx) return;
+  if(!video&&!pptx)return;
   showUpload();
   if(video){uploadFiles.video=video;document.getElementById("video-fname").textContent="✓ "+video.name;}
   if(pptx){uploadFiles.pptx=pptx;document.getElementById("pptx-fname").textContent="✓ "+pptx.name;}
 });
-document.getElementById("upload-btn").onclick=showUpload;
 
-// ── BrainSurgeon Parser ──────────────────────────────────────────────────────
+document.addEventListener("keydown", function(e){
+if(e.key==="Escape"){
+  if(document.getElementById("detail-view").style.display!=="none"){closeDetail();return;}
+  closeUpload(); closeMoveModal(); hideCtx(); hideProjCtx(); hideFolderCtx();
+}
+});
+
+// ── Card Preview ──────────────────────────────────────────────────────────────
+function initCardPreview(card){
+  var src=card.dataset.video;if(!src)return;
+  var thumb=card.querySelector(".cthumb");
+  var video=document.createElement("video");
+  video.muted=true;video.playsInline=true;video.preload="none";
+  video.style.cssText="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;opacity:0;transition:opacity 0.15s;pointer-events:none;";
+  thumb.appendChild(video);
+  var loaded=false;
+  card.addEventListener("mouseenter",function(){
+    if(!loaded){video.src="/uploads/videos/"+src;video.load();loaded=true;}
+    var bg=thumb.querySelector("img,.cph");if(bg)bg.style.opacity="0";
+    video.style.opacity="1";
+  });
+  card.addEventListener("mousemove",function(e){
+    if(!video.duration)return;
+    var rect=thumb.getBoundingClientRect();
+    video.currentTime=Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width))*video.duration;
+  });
+  card.addEventListener("mouseleave",function(){
+    video.style.opacity="0";video.pause();
+    var bg=thumb.querySelector("img,.cph");if(bg)bg.style.opacity="1";
+  });
+  card.addEventListener("dragstart",function(){
+    video.style.opacity="0";var bg=thumb.querySelector("img,.cph");if(bg)bg.style.opacity="1";
+  });
+}
+
+// ── BrainSurgeon Parser ───────────────────────────────────────────────────────
+async function generateVideoThumbnail(file){
+  return new Promise(function(resolve){
+    var video=document.createElement("video"),url=URL.createObjectURL(file),captured=false;
+    video.muted=true;video.playsInline=true;
+    function capture(){
+      if(captured)return;captured=true;
+      try{
+        var c=document.createElement("canvas");c.width=320;c.height=Math.round(320*video.videoHeight/video.videoWidth)||180;
+        c.getContext("2d").drawImage(video,0,0,c.width,c.height);URL.revokeObjectURL(url);resolve(c.toDataURL("image/jpeg",0.7));
+      }catch(e){URL.revokeObjectURL(url);resolve(null);}
+    }
+    video.addEventListener("seeked",capture);
+    video.addEventListener("loadeddata",function(){video.currentTime=video.duration>0?Math.min(2,video.duration*0.2):0;});
+    video.onerror=function(){URL.revokeObjectURL(url);resolve(null);};
+    video.src=url;video.load();
+  });
+}
 function calcACE(cats){var tw=0,ws=0;Object.keys(cats).forEach(function(k){var sum=cats[k].kpis.reduce(function(a,kpi){return a+colorValues[kpi.original];},0);ws+=(sum/cats[k].kpis.length)*cats[k].weight;tw+=cats[k].weight;});return Math.round(ws/tw);}
 function mkCats(){return JSON.parse(JSON.stringify({attention:{name:"Attention",weight:3,kpis:[{id:"att_1",name:"Engaging Beginning",type:"binary",original:"green",value:"✓",thresholds:null,hasAmber:false},{id:"att_2",name:"Scene Pace",type:"binary",original:"green",value:"✓",thresholds:null,hasAmber:false},{id:"att_3",name:"Scene Motion",type:"numeric",original:"green",value:75,thresholds:{red:33,amber:50},hasAmber:true}]},branding:{name:"Branding",weight:5,kpis:[{id:"bra_1",name:"Brand Cut-Through",type:"numeric",original:"red",value:19,thresholds:{red:25,amber:50},hasAmber:true},{id:"bra_2",name:"Brand CT First Seconds",type:"binary",original:"green",value:"✓",thresholds:null,hasAmber:false},{id:"bra_3",name:"Product Attention Over Time",type:"numeric",original:"red",value:0,thresholds:{red:5,amber:27},hasAmber:true},{id:"bra_4",name:"Product CT First Seconds",type:"binary",original:"red",value:"✗",thresholds:null,hasAmber:false}]},processing:{name:"Processing",weight:1,kpis:[{id:"pro_1",name:"Ad Recall Potential",type:"numeric",original:"green",value:94,thresholds:{red:33,amber:50},hasAmber:true},{id:"pro_2",name:"Visual Simplicity",type:"numeric",original:"green",value:81,thresholds:{red:33,amber:50},hasAmber:true},{id:"pro_3",name:"Ideal Aspect Ratio",type:"binary",original:"green",value:"✓",thresholds:null,hasAmber:false},{id:"pro_4",name:"Enough Time to Read",type:"numeric",original:"red",value:8,thresholds:{red:33,amber:50},hasAmber:true},{id:"pro_5",name:"Ideal Sound Setting",type:"binary",original:"green",value:"✓",thresholds:null,hasAmber:false}]},emotional:{name:"Emotional",weight:1,kpis:[{id:"emo_1",name:"Human Element",type:"numeric",original:"green",value:81,thresholds:{red:30,amber:70},hasAmber:true},{id:"emo_2",name:"Activation: Visual",type:"numeric",original:"green",value:81,thresholds:{red:33,amber:50},hasAmber:true},{id:"emo_3",name:"Activation: Text",type:"numeric",original:"green",value:83,thresholds:{red:25,amber:40},hasAmber:true}]},persuasion:{name:"Persuasion",weight:1,kpis:[{id:"per_1",name:"CTA Cut-Through",type:"binary",original:"red",value:"✗",thresholds:null,hasAmber:false},{id:"per_2",name:"Engagement Potential",type:"numeric",original:"amber",value:50,thresholds:{red:33,amber:50},hasAmber:true}]}}))}
 function exText(xml){var m=xml.match(/<a:t[^>]*>([^<]+)<\/a:t>/g);if(m)return m.map(function(x){return x.replace(/<[^>]+>/g,"");}).join(" ");return xml.replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim();}
 function exThresh(text){var p1=[/&lt;\s*(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)\s*&gt;\s*(\d+(?:\.\d+)?)/,/<\s*(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)\s*>\s*(\d+(?:\.\d+)?)/];for(var i=0;i<p1.length;i++){var m=text.match(p1[i]);if(m)return{red:parseFloat(m[1]),amber:parseFloat(m[3]),hasAmber:true};}var p2=[/&lt;\s*(\d+(?:\.\d+)?)\s*&gt;\s*(\d+(?:\.\d+)?)/,/<\s*(\d+(?:\.\d+)?)\s*>\s*(\d+(?:\.\d+)?)/];for(var j=0;j<p2.length;j++){var m2=text.match(p2[j]);if(m2)return{red:parseFloat(m2[1]),amber:null,hasAmber:false};}return null;}
 function detColor(val,t){if(!t)return val>0?"green":"red";if(t.hasAmber){if(val<t.red)return"red";if(val<=t.amber)return"amber";return"green";}return val>t.red?"green":"red";}
-
 async function parsePPTX(file){
   var zip=await JSZip.loadAsync(file);
   var thumbUrl,allText="",kpiOv="",slideTexts={},kpiData={},thresh={};
   var tp=Object.keys(zip.files).find(function(p){return /ppt\/media\/image-4-1\.(png|jpg|jpeg)/i.test(p);});
   if(tp){try{var d=await zip.file(tp).async("base64");var e=tp.split(".").pop().toLowerCase();thumbUrl="data:image/"+(e==="png"?"png":"jpeg")+";base64,"+d;}catch(e){}}
   for(var path in zip.files){var mm=path.match(/ppt\/slides\/slide(\d+)\.xml/);if(mm){var content=await zip.file(path).async("string");var text=exText(content);slideTexts[mm[1]]=text;allText+=" "+text;if(/KPI Overview|Attention:.*Branding:.*Processing Ease:/i.test(text))kpiOv=text;}}
-  var nm=allText.match(/Asset Name:\s*([A-Za-z0-9_\s&;]+?)\s+Asset Stage/i);
-  var assetName=nm?nm[1].trim():"Unknown";
-  var tsm=allText.match(/Date:\s*(\d{1,2}\/\d{1,2}\/\d{4},\s*\d{1,2}:\d{2}\s*[AP]M)/i);
-  var assetDate=tsm?tsm[1]:null;
+  var nm=allText.match(/Asset Name:\s*([A-Za-z0-9_\s&;]+?)\s+Asset Stage/i);var assetName=nm?nm[1].trim():"Unknown";
+  var tsm=allText.match(/Date:\s*(\d{1,2}\/\d{1,2}\/\d{4},\s*\d{1,2}:\d{2}\s*[AP]M)/i);var assetDate=tsm?tsm[1]:null;
   var company=(allText.match(/Which Company\?:\s*(\w+)/i)||[])[1]||null;
   var brand=(allText.match(/Brand Name:\s*([^\n:]+?)(?=\s+(?:Voice-Over|Asset|File|Market|Date|Category))/i)||[])[1];if(brand)brand=brand.trim();
   var pm=allText.match(/Scene pace is.*?(?:above|below) benchmark for\s+([A-Za-z0-9\s\-]+)/i);var platform=pm?pm[1].trim():null;
@@ -611,110 +787,40 @@ async function parsePPTX(file){
   return{categories:cats,assetInfo:{name:assetName,date:assetDate,company:company,brand:brand,platform:platform,thumbnail:thumbUrl}};
 }
 
-function cardDragStart(e, id) {
-state.draggingAssetId = id;
-e.dataTransfer.setData("assetId", id);
-e.dataTransfer.effectAllowed = "move";
-}
-function cardDragEnd() { state.draggingAssetId = null; }
-function folderDragOver(e, el) {
-if (!state.draggingAssetId) return;
-e.preventDefault();
-el.style.outline = "3px solid #6366f1";
-}
-function folderDragLeave(el) { el.style.outline = ""; }
-async function folderDrop(e, folderId) {
-e.preventDefault();
-folderDragLeave(e.currentTarget);
-if (!state.draggingAssetId) return;
-await submitMove(state.draggingAssetId, folderId);
-state.draggingAssetId = null;
-}
-
-async function generateVideoThumbnail(file) {
-return new Promise(function(resolve) {
-  var video = document.createElement("video");
-  var url = URL.createObjectURL(file);
-  video.muted = true;
-  video.playsInline = true;
-  var captured = false;
-  function capture() {
-    if (captured) return;
-    captured = true;
-    try {
-      var canvas = document.createElement("canvas");
-      canvas.width = 320;
-      canvas.height = Math.round(320 * video.videoHeight / video.videoWidth) || 180;
-      canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
-      URL.revokeObjectURL(url);
-      resolve(canvas.toDataURL("image/jpeg", 0.7));
-    } catch(e) { URL.revokeObjectURL(url); resolve(null); }
-  }
-  video.addEventListener("seeked", capture);
-  video.addEventListener("loadeddata", function() {
-    video.currentTime = video.duration > 0 ? Math.min(2, video.duration * 0.2) : 0;
-  });
-  video.onerror = function() { URL.revokeObjectURL(url); resolve(null); };
-  video.src = url;
-  video.load();
-});
-}
-
-function initCardPreview(card) {
-var src = card.dataset.video;
-if (!src) return;
-var thumb = card.querySelector(".cthumb");
-var video = document.createElement("video");
-video.muted = true;
-video.playsInline = true;
-video.preload = "none";
-video.style.cssText = "position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;opacity:0;transition:opacity 0.15s;pointer-events:none;";
-thumb.appendChild(video);
-var loaded = false;
-card.addEventListener("mouseenter", function() {
-  if (!loaded) { video.src = "/uploads/videos/" + src; video.load(); loaded = true; }
-  var bg = thumb.querySelector("img, .cph"); if (bg) bg.style.opacity = "0";
-  video.style.opacity = "1";
-});
-card.addEventListener("mousemove", function(e) {
-  if (!video.duration) return;
-  var rect = thumb.getBoundingClientRect();
-  var pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-  video.currentTime = pct * video.duration;
-});
-card.addEventListener("mouseleave", function() {
-  video.style.opacity = "0"; video.pause();
-  var bg = thumb.querySelector("img, .cph"); if (bg) bg.style.opacity = "1";
-});
-card.addEventListener("dragstart", function() {
-  video.style.opacity = "0";
-  var bg = thumb.querySelector("img, .cph"); if (bg) bg.style.opacity = "1";
-});
-}
-
-var ctxId = null;
-function showCtx(e, assetId) {
-e.preventDefault();
-e.stopPropagation();
-ctxId = assetId;
-var m = document.getElementById("ctx-menu");
+var folderCtxId = null;
+function showFolderCtx(e, id) {
+e.preventDefault(); e.stopPropagation(); folderCtxId = id;
+var m = document.getElementById("folder-ctx-menu");
 m.style.display = "block";
-m.style.left = e.clientX + "px";
-m.style.top = e.clientY + "px";
+m.style.left = e.clientX+"px"; m.style.top = e.clientY+"px";
 var r = m.getBoundingClientRect();
-if (r.right > window.innerWidth) m.style.left = (e.clientX - r.width) + "px";
-if (r.bottom > window.innerHeight) m.style.top = (e.clientY - r.height) + "px";
+if (r.right > window.innerWidth) m.style.left = (e.clientX-r.width)+"px";
+if (r.bottom > window.innerHeight) m.style.top = (e.clientY-r.height)+"px";
 }
-function hideCtx() {
-document.getElementById("ctx-menu").style.display = "none";
-ctxId = null;
+function hideFolderCtx() { document.getElementById("folder-ctx-menu").style.display="none"; folderCtxId=null; }
+async function folderCtxRename() {
+if (!folderCtxId) return;
+var f = state.folders.find(function(x){ return x.id===folderCtxId; });
+var name = prompt("Rename:", f?f.name:"");
+if (!name || name===(f&&f.name)) return;
+await api("/api/folders/"+folderCtxId, {method:"PUT", body:JSON.stringify({name:name})});
+await loadFolders(); renderSidebar(); renderGrid(); renderBreadcrumb();
+}
+async function folderCtxDelete() {
+if (!folderCtxId) return;
+var f = state.folders.find(function(x){ return x.id===folderCtxId; });
+if (!confirm('Delete "' + (f?f.name:"") + '"? Assets inside will move up a level.')) return;
+await api("/api/folders/"+folderCtxId, {method:"DELETE"});
+if (state.folderId===folderCtxId) state.folderId = state.projectId;
+await loadFolders(); renderSidebar(); renderGrid();
 }
 
-loadFolders();
-loadAssets(null);
+// ── Init ──────────────────────────────────────────────────────────────────────
+async function init() {
+  await loadFolders();
+  showHome();
+}
+init();
 </script>
-<div id="ctx-menu" style="display:none">
-<div class="ctx-item" onclick="hideCtx();moveAsset(ctxId)">📁 Move to folder...</div>
-<div class="ctx-item ctx-danger" onclick="var id=ctxId;hideCtx();deleteAssetCard(id)">🗑 Delete</div>
-</div>
+
 </body></html>
