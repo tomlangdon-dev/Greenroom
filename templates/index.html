@@ -226,6 +226,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .filter-btn.f-amber::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:#f59e0b;margin-right:5px;vertical-align:middle}
 .filter-btn.f-red::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:#ef4444;margin-right:5px;vertical-align:middle}
 .filter-btn.f-unscored::before{content:"○";margin-right:4px;font-size:10px;color:#94a3b8}
+.card-tags{display:flex;flex-wrap:wrap;gap:3px;margin-top:5px;border-top:1px solid #f1f5f9;padding-top:5px}
+.card-tag{background:#f5f3ff;color:#6366f1;padding:1px 7px;border-radius:8px;font-size:10px;font-weight:600}
 </style>
 </head>
 <body>
@@ -605,10 +607,13 @@ function makeCard(a){
   var thumb=a.thumbnail?'<img src="'+a.thumbnail+'" alt="" draggable="false">':'<span class="cph">🎬</span>';
   var date=a.uploaded_at?new Date(a.uploaded_at).toLocaleDateString("en-GB",{day:"numeric",month:"short"}):"";
   var ace=s!==null?"ACE "+s:"No score";var displayName=a.display_name||a.base_name;var masterBadge=a.is_master?'<span class="master-badge">MASTER</span>':'';
+  var audTags=[];try{audTags=JSON.parse(a.audience_tags||'[]');}catch(e){}
+var tagsHtml=audTags.length?'<div class="card-tags">'+audTags.map(function(t){return'<span class="card-tag">'+t+'</span>';}).join('')+'</div>':'';
   var h='<div class="card" data-video="'+(a.video_filename||'')+'" draggable="true" onclick="openAsset('+a.id+')" oncontextmenu="showCtx(event,'+a.id+')" ondragstart="cardDragStart(event,'+a.id+')" ondragend="cardDragEnd()">';
   h+='<div class="cthumb">'+thumb+'<span class="ace '+cls+'">'+ace+'</span>'+masterBadge+'</div>';
   h+='<div class="cbody"><div class="cname" title="'+displayName+'">'+displayName+'</div>';
   h+='<div class="cmeta"><span class="vtag">v'+(a.latest_version||1)+'</span><span class="cdate">'+date+'</span></div>';
+  h+=tagsHtml;
   h+='</div></div>';return h;
 }
 
