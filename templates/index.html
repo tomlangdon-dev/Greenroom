@@ -183,7 +183,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .tag-pill-x{cursor:pointer;opacity:.6;font-size:14px;line-height:1;padding:0 2px}
 .tag-pill-x:hover{opacity:1}
 .tag-text-input{border:none;outline:none;font-size:13px;color:#1e293b;min-width:80px;flex:1;background:none;padding:2px 0;font-family:inherit}
-.tag-suggestions{position:absolute;top:calc(100% + 4px);left:0;right:0;background:white;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.1);z-index:100;overflow:hidden;max-height:160px;overflow-y:auto}
+.tag-suggestions{position:fixed;top:0;left:0;width:200px;background:white;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.1);z-index:3000;overflow:hidden;max-height:160px;overflow-y:auto;display:none}
 .tag-suggestion-item{padding:9px 14px;font-size:13px;cursor:pointer;transition:background .1s}
 .tag-suggestion-item:hover{background:#f5f3ff;color:#6366f1}
 </style>
@@ -343,7 +343,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
           <div class="tag-section" style="position:relative">
             <div class="tag-label">Audience Tags <span style="color:#cbd5e0;font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">optional</span></div>
             <div class="tag-input-wrap" id="tag-input-wrap" onclick="document.getElementById('tag-text-input').focus()">
-              <input type="text" id="tag-text-input" class="tag-text-input" placeholder="Type to add..." onkeydown="handleTagKeydown(event)" oninput="handleTagInput(event)" onblur="setTimeout(hideSuggestions,150)">
+              <input type="text" id="tag-text-input" class="tag-text-input" placeholder="Type and press Enter to add..." onkeydown="handleTagKeydown(event)" oninput="handleTagInput(event)" onblur="setTimeout(hideSuggestions,150)">
             </div>
             <div id="tag-suggestions" class="tag-suggestions" style="display:none"></div>
           </div>
@@ -556,6 +556,12 @@ document.getElementById("modal-overlay").addEventListener("click",function(e){if
 document.getElementById("move-overlay").addEventListener("click",function(e){if(e.target===this)closeMoveModal();});
 document.getElementById("report-overlay").addEventListener("click",function(e){if(e.target===this)closeReportModal();});
 document.getElementById("tag-overlay").addEventListener("click",function(e){if(e.target===this)submitTags(true);});
+document.getElementById("tag-text-input").addEventListener("focus", function() {
+if (!tagState.projectId) return;
+api("/api/tags?project_id=" + tagState.projectId).then(function(tags) {
+  tagState.suggestions = tags || [];
+});
+});
 function filePicked(type,input){if(!input.files[0])return;uploadFiles[type]=input.files[0];document.getElementById(type+"-fname").textContent="✓ "+input.files[0].name;}
 function dzOver(e,id){e.preventDefault();document.getElementById(id).classList.add("over");}
 function dzOut(id){document.getElementById(id).classList.remove("over");}
@@ -620,6 +626,8 @@ function showTagModal(assetId, videoUrl, baseName, projectId) {
   var vid=document.getElementById("tag-video");
   vid.src=videoUrl; vid.load(); vid.play().catch(function(){});
   document.getElementById("tag-display-name").value=baseName;
+  document.getElementById("tag-text-input").value="";
+hideSuggestions();
   document.getElementById("tag-master").checked=false;
   api("/api/tags?project_id="+projectId).then(function(tags){tagState.suggestions=tags||[];});
   renderTagPills();
@@ -678,6 +686,10 @@ function handleTagInput(e){
   if(!matches.length){hideSuggestions();return;}
   var box=document.getElementById("tag-suggestions");
   box.innerHTML=matches.map(function(t){return'<div class="tag-suggestion-item" onmousedown="addAudienceTag(\''+t+'\')">'+t+'</div>';}).join("");
+  var rect = document.getElementById("tag-input-wrap").getBoundingClientRect();
+box.style.top = (rect.bottom + 4) + "px";
+box.style.left = rect.left + "px";
+box.style.width = rect.width + "px";
   box.style.display="block";
 }
 
@@ -687,6 +699,8 @@ function validateTagForm(){document.getElementById("tag-confirm").disabled=!(tag
 
 async function submitTags(skip){
   if(skip){closeTagModal();return;}
+  var leftover = document.getElementById("tag-text-input").value.trim();
+if (leftover) addAudienceTag(leftover);
   var displayName=document.getElementById("tag-display-name").value.trim();
   var payload={display_name:displayName!==tagState.baseName?displayName:null,phase:tagState.phase,platform:tagState.platform,format:tagState.format||null,is_master:tagState.isMaster?1:0,audience_tags:tagState.audienceTags,project_id:tagState.projectId};
   var res=await api("/api/assets/"+tagState.assetId+"/tags",{method:"PUT",body:JSON.stringify(payload)});
