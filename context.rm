@@ -1,8 +1,10 @@
-Video Asset Manager — Project Context
+
+My thought process
+Video Asset Manager — Project Context (Updated)
 
 What It Is
 
-A local-first web app (Mac) for managing video assets and Brainsuite AI test results. Built for a creative agency producer with no formal dev background.
+A local-first web app (Mac) for managing video assets and Brainsuite AI test results. Built for a creative agency producer. Single-user for now, cloud deployment planned.
 
 Tech Stack
 
@@ -27,79 +29,140 @@ CampaignManager/
 └── uploads/
 ├── videos/             ← Copies of uploaded video files
 └── pptx/               ← Copies of uploaded PPTX reports
-What's Built
+Backend — All Current Routes (app.py)
 
-Backend (app.py) — all current routes:
 Route	Method	Purpose
 /	GET	Serves index.html
 /uploads/videos/<filename>	GET	Serves video files
 /api/folders	GET	List all folders
 /api/folders	POST	Create folder {name, parent_id}
 /api/folders/<id>	PUT	Rename folder
-/api/folders/<id>	DELETE	Hard-delete folder + all contained assets + files
+/api/folders/<id>	DELETE	Hard-delete folder + all contained assets + files (recursive)
 /api/folders/<id>/count	GET	Count assets recursively in folder
-/api/assets	GET	List assets ?folder_id=X
+/api/assets	GET	List assets — supports ?folder_id=X or ?project_id=X (recursive)
 /api/assets/<id>	DELETE	Hard-delete asset + files
 /api/assets/<id>	PUT	Move asset to folder {folder_id}
+/api/assets/<id>/tags	PUT	Update metadata + auto-create folder path
 /api/versions/<asset_id>	GET	List versions for asset
 /api/upload	POST	Upload video + optional PPTX
 /api/versions/<id>/report	POST	Pair report with existing version
+/api/tags	GET	Get all distinct audience tags ?project_id=X
 /api/projects/stats	GET	Asset counts + score distribution per project
-Database Schema:
+Database Schema
+
 sql
 
 
 folders   — id, name, parent_id (CASCADE on delete), created_at
-assets    — id, folder_id (SET NULL on delete), base_name, created_at
-versions  — id, asset_id (CASCADE), version_number, video_filename,
-        video_path, pptx_filename, pptx_path, ace_score,
-        kpi_data (JSON), asset_info (JSON), thumbnail (base64),
-        is_latest, uploaded_at
-Frontend (index.html) — features:
-Home view: Project picker — cards showing asset count + ACE score distribution bar (green/amber/red/unscored). Right-click to rename/delete projects.
-Project view: Dark sidebar with folder tree scoped to current project. Breadcrumb navigation. Sub-folder cards + asset cards in main grid.
-Asset cards: Thumbnail (from PPTX or auto-generated from video). Hover to scrub video preview. ACE score badge. Right-click context menu (Add Report / Move / Delete).
-Upload modal: Drag-and-drop video + optional PPTX. PPTX parsed in browser using BrainSurgeon logic (JSZip). Auto-generates thumbnail from video if no PPTX. Filename mismatch warning before pairing.
-Detail/player view: Video player + ACE score panel. Version dropdown. Add/Replace Report button. Score breakdown by category (Attention, Branding, Processing, Emotional, Persuasion) with KPI-level detail.
-Folder management: Create, rename, delete (with asset count warning). Drag asset cards onto folder cards to move. Right-click folders for rename/delete.
+
+assets    — id, folder_id (SET NULL on delete), base_name,
+        display_name, phase, platform, format,
+        is_master (0/1), audience_tags (JSON), created_at
+
+versions  — id, asset_id (CASCADE), version_number,
+        video_filename, video_path, pptx_filename, pptx_path,
+        ace_score, kpi_data (JSON), asset_info (JSON),
+        thumbnail (base64), is_latest, uploaded_at
+Frontend — Feature Overview
+
+Navigation Structure
+Home: Project picker cards with score distribution bars
+Project → Overview (project root): Sticky header with project name + score bands + filter bar. Assets grouped by folder path with section dividers. "Untagged" group at bottom.
+Project → Sub-folder: Normal grid view with folder cards + asset cards
+Detail/player view: Video player + ACE scores panel
+Sidebar (within project)
+Overview link (SVG home icon, top) → returns to project overview
+Separator line
+FOLDERS label
+Folder tree — collapsible with ▶ arrows, top-level folders slightly lighter/more prominent
+Clicking "← All Projects" returns to home
+Overview Page
+Sticky header: Project name (large headline) + score bands (right-aligned, max 500px, fully rounded endcaps, counts inside coloured segments) + filter bar (All / Not Green / Green / Amber / Red / Unscored with coloured pip indicators)
+Filter hides empty sections entirely
+Folder path headers (e.g. REACH — META — 4X5) above each group
+Untagged group catches assets without phase/platform
+Asset Cards
+Thumbnail (from PPTX or auto-generated from video frame)
+Hover to scrub video preview (mouse position = timeline position)
+ACE score badge (green/amber/red/none)
+MASTER badge if flagged
+Right-click context menu: Add Report (if unscored) / Move to folder / Delete
+Drag onto folder cards to move
+Tagging Modal (post-upload, new assets only)
+Video autoplays silently in left panel
+Phase pills (Reach/Action) — required
+Platform pills (Meta/Snapchat/TikTok/OLV/YouTube/Pinterest) — required
+Format pills (4x5/9x16/16x9/1x1/2x3) — optional
+Display name (pre-filled from filename, freetyped)
+Master toggle
+Audience tags (freetext with autocomplete from existing tags, Enter to add)
+Confirm locked until phase + platform selected
+Context autofills from current folder if navigated before upload
+Auto-creates folder path on confirm, moves asset there
+Version uploads skip the modal entirely
+Detail/Player View
+Back button → returns to grid/overview
+Display name in header (filename shown secondary in grey if renamed)
+Version dropdown
+Meta bar: phase / platform / format / ★ Master / audience tags / report date + ✏️ Edit button
+Edit button opens tagging modal pre-filled with existing data
+Video player (full width)
+Right panel: ACE score + category breakdown (collapsible KPI detail)
+Add/Replace Report button
+Report Pairing
+PPTX parsed entirely in browser (JSZip, BrainSurgeon logic)
+Pairing check: normalises both filenames (/[^a-z0-9]/g stripped), checks if video token in PPTX OR PPTX core (boilerplate stripped) in video token. Warning on mismatch, not a hard block.
 Key Design Decisions
 
 Projects = Top-level folders
-No separate projects table. A "project" is simply a root-level folder (parent_id = NULL). The home view shows these as project cards.
+No separate projects table. "Project" = root-level folder (parent_id = NULL). Home shows these as project cards.
+
+Overview vs Folder navigation
+Overview (project root) fetches all assets in the project recursively via ?project_id=X. Folder view fetches by ?folder_id=X. Switching between them is seamless.
 
 Versions
-Same filename uploaded twice = new version of same asset. Different filename = new asset. is_latest = 1 on the most recent version.
+Same filename = new version of same asset. Different filename = new asset. is_latest = 1 on most recent.
 
-PPTX Parsing
-Done entirely in the browser using JSZip (lifted from a separate tool called BrainSurgeon). Flask never parses PPTX. Parsed JSON (kpi_data) and thumbnail (base64) are sent alongside the file upload.
+Tagging drives folder structure
+Phase + Platform + Format from the tag modal auto-creates the folder hierarchy. The folder tree IS the tag structure.
+
+Display name
+display_name is separate from base_name (filename). Cards show display_name || base_name. Player header shows display name prominently, base_name secondary in grey.
 
 ACE Score
 Weighted average of 5 categories: Branding (×5), Attention (×3), Processing/Emotional/Persuasion (×1 each). Green ≥67, Amber 34–66, Red <34.
 
 File storage
-Uploaded files are copies in uploads/. Originals are never touched. Safe to hard-delete copies from the app.
+All uploads are copies in uploads/. Originals never touched. Safe to hard-delete.
 
-Report–Video pairing check
-Brainsuite encodes the video filename (dot removed, lowercased, special chars stripped) into the PPTX filename. Mismatch check normalises both names (/[^a-z0-9]/g stripped) and checks in both directions — video token in PPTX, and PPTX core (boilerplate stripped) in video token.
+Code Delivery (Important for future sessions)
 
-Code Delivery Constraints
-
-This is important for future sessions:
-
-HTML files → send as a standalone code block → renders as artifact in chat → use the code view tab on the artifact → copy → paste into templates/index.html
-Python files → use the repair.py setup script approach. Every Python change is written as a repair.py that rewrites the target file using chr(32) for indentation and chr(10) for newlines (avoids chat stripping whitespace). Run with python3 repair.py.
-VS Code is the editor. Python 3.14.3 installed. Managed corporate Mac — no shell script execution, python3 only.
-Related Tools (separate repos)
+HTML files → send as standalone code block → renders as artifact → use code view tab → copy → paste into templates/index.html
+Python files → use repair.py. Write using S = chr(32)*4, S2 = chr(32)*8, N = chr(10) to encode indentation. Run with python3 repair.py.
+VS Code is the editor. Python 3.14.3. Managed corporate Mac — python3 only, no shell scripts.
+DB migrations use list comprehension: [conn.execute("ALTER TABLE assets ADD COLUMN "+c+" "+d) for c,d in new_cols if c not in existing]
+Related Tools
 
 AutoBS (Chrome extension)
-Automates Brainsuite upload form. Manages campaign settings, queues multiple uploads, captures results from the web results page. Scrapes ACE scores, category scores, and KPI data from the live Brainsuite results page (not from PPTX).
+Automates Brainsuite upload form. Captures ACE scores, category scores, KPI data from the live Brainsuite results page.
 
 BrainSurgeon (web app)
-Parses Brainsuite PPTX reports. Extracts ACE score, 5-category breakdown, 17 KPIs with red/amber/green status. Comparison mode for before/after versions. The parsing logic from this app is embedded directly in index.html (the parsePPTX() function and supporting functions).
+Parses Brainsuite PPTX reports. The parsePPTX() function and all supporting logic is embedded directly in index.html.
 
-Known Limitations / Future Work
+Deferred / Backlog
 
-Sidebar drag-to-folder not yet implemented (cards can be dragged onto folder cards in the grid only)
-Cloud/remote access not yet implemented (SharePoint is company mandate but IT access is a blocker; private cloud TBD)
-No export functionality yet
-"All Assets" root view not implemented (by design — assets live inside projects)
+Item	Notes
+Auto-launcher	Wrap python3 launch.py in Automator app, add to Login Items
+Sidebar drag-to-folder	Drag asset cards onto sidebar folders (currently grid folder cards only)
+Folder drag	Pick up entire folders for mass moves
+Cloud/remote deployment	Private server, always-on, multi-user, bypasses SharePoint blocker
+Sort	By name, date, ACE score
+Download	Single asset + project-level zip preserving folder structure
+Simple comments	Text notes on versions, upgrades to timestamped playhead comments when cloud arrives
+Version ACE delta	↑/↓ indicator on score badge vs previous version
+Version stacking — fuzzy match	Handle _v2 suffix etc. not creating a new asset
+Audience as single-select	Currently multi-tag; should be one audience per asset, project-defined options
+Project-level config screen	Define available audiences, lookup values per project
+Cohorts	Concept not yet defined — revisit
+Stage 2 filter extensions	Filter by platform, phase, format, master status once tagging data is populated
+List view toggle	Alternative to card grid for dense folders

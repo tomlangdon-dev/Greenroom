@@ -93,12 +93,16 @@ def folder_count(fid):
 @app.route("/api/assets", methods=["GET"])
 def get_assets():
     folder_id = request.args.get("folder_id")
+    project_id = request.args.get("project_id")
     conn = get_db()
-    base_q = "SELECT a.id, a.base_name, a.display_name, a.phase, a.platform, a.format, a.is_master, a.audience_tags, a.folder_id, a.created_at, v.ace_score, v.asset_info, v.thumbnail, v.uploaded_at, v.version_number as latest_version, v.id as latest_version_id, v.video_filename FROM assets a LEFT JOIN versions v ON v.asset_id = a.id AND v.is_latest = 1 WHERE a.folder_id"
-    if folder_id:
-        rows = conn.execute(base_q + " = ? ORDER BY a.base_name", (folder_id,)).fetchall()
+    base_q = "SELECT a.id, a.base_name, a.display_name, a.phase, a.platform, a.format, a.is_master, a.audience_tags, a.folder_id, a.created_at, v.ace_score, v.asset_info, v.thumbnail, v.uploaded_at, v.version_number as latest_version, v.id as latest_version_id, v.video_filename FROM assets a LEFT JOIN versions v ON v.asset_id = a.id AND v.is_latest = 1"
+    if project_id:
+        pf = "WITH RECURSIVE pf AS (SELECT id FROM folders WHERE id = ? UNION ALL SELECT f.id FROM folders f INNER JOIN pf ON f.parent_id = pf.id) "
+        rows = conn.execute(pf + base_q + " WHERE a.folder_id IN (SELECT id FROM pf) ORDER BY a.base_name", (project_id,)).fetchall()
+    elif folder_id:
+        rows = conn.execute(base_q + " WHERE a.folder_id = ? ORDER BY a.base_name", (folder_id,)).fetchall()
     else:
-        rows = conn.execute(base_q + " IS NULL ORDER BY a.base_name").fetchall()
+        rows = conn.execute(base_q + " WHERE a.folder_id IS NULL ORDER BY a.base_name").fetchall()
     conn.close()
     return jsonify([dict(r) for r in rows])
 
