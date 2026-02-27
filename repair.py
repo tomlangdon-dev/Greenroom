@@ -1,8 +1,16 @@
-import os
+import os, sqlite3
+
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'database.db')
+conn = sqlite3.connect(DB_PATH)
+existing = [r[1] for r in conn.execute("PRAGMA table_info(assets)").fetchall()]
+new_cols = [('display_name','TEXT'),('phase','TEXT'),('platform','TEXT'),('format','TEXT'),('is_master','INTEGER DEFAULT 0'),('audience_tags','TEXT DEFAULT "[]"')]
+[conn.execute("ALTER TABLE assets ADD COLUMN "+c+" "+d) for c,d in new_cols if c not in existing]
+conn.commit()
+conn.close()
+print("DB done")
 
 S = chr(32)*4
 S2 = chr(32)*8
-N = chr(10)
 
 lines = [
 'from flask import Flask, render_template, request, jsonify, send_from_directory',
@@ -101,7 +109,7 @@ S+'return jsonify({"count": row["total"] if row else 0})',
 'def get_assets():',
 S+'folder_id = request.args.get("folder_id")',
 S+'conn = get_db()',
-S+'base_q = "SELECT a.id, a.base_name, a.folder_id, a.created_at, v.ace_score, v.asset_info, v.thumbnail, v.uploaded_at, v.version_number as latest_version, v.id as latest_version_id, v.video_filename FROM assets a LEFT JOIN versions v ON v.asset_id = a.id AND v.is_latest = 1 WHERE a.folder_id"',
+S+'base_q = "SELECT a.id, a.base_name, a.display_name, a.phase, a.platform, a.format, a.is_master, a.audience_tags, a.folder_id, a.created_at, v.ace_score, v.asset_info, v.thumbnail, v.uploaded_at, v.version_number as latest_version, v.id as latest_version_id, v.video_filename FROM assets a LEFT JOIN versions v ON v.asset_id = a.id AND v.is_latest = 1 WHERE a.folder_id"',
 S+'if folder_id:',
 S2+'rows = conn.execute(base_q + " = ? ORDER BY a.base_name", (folder_id,)).fetchall()',
 S+'else:',
@@ -130,6 +138,59 @@ S+'conn.execute("UPDATE assets SET folder_id = ? WHERE id = ?", (folder_id, aid)
 S+'conn.commit()',
 S+'conn.close()',
 S+'return jsonify({"ok": True})',
+'',
+'@app.route("/api/assets/<int:aid>/tags", methods=["PUT"])',
+'def update_tags(aid):',
+S+'data = request.get_json()',
+S+'display_name = data.get("display_name")',
+S+'phase = data.get("phase")',
+S+'platform = data.get("platform")',
+S+'fmt = data.get("format")',
+S+'is_master = 1 if data.get("is_master") else 0',
+S+'audience_tags = json.dumps(data.get("audience_tags", []))',
+S+'project_id = data.get("project_id")',
+S+'conn = get_db()',
+S+'new_folder_id = None',
+S+'if project_id and phase and platform:',
+S2+'def find_or_create(name, parent_id):',
+S2+S+'r = conn.execute("SELECT id FROM folders WHERE name=? AND parent_id=?", (name, parent_id)).fetchone()',
+S2+S+'if r: return r["id"]',
+S2+S+'cur = conn.execute("INSERT INTO folders (name, parent_id) VALUES (?,?)", (name, parent_id))',
+S2+S+'conn.commit()',
+S2+S+'return cur.lastrowid',
+S2+'phase_id = find_or_create(phase, project_id)',
+S2+'plat_id = find_or_create(platform, phase_id)',
+S2+'new_folder_id = find_or_create(fmt, plat_id) if fmt else plat_id',
+S+'conn.execute("UPDATE assets SET display_name=?,phase=?,platform=?,format=?,is_master=?,audience_tags=?,folder_id=? WHERE id=?", (display_name, phase, platform, fmt, is_master, audience_tags, new_folder_id, aid))',
+S+'conn.commit()',
+S+'conn.close()',
+S+'return jsonify({"ok": True, "folder_id": new_folder_id})',
+'',
+'@app.route("/api/tags")',
+'def get_tags():',
+S+'project_id = request.args.get("project_id")',
+S+'conn = get_db()',
+S+'if project_id:',
+S2+'sql = (',
+S2+S+'"WITH RECURSIVE pf AS ("',
+S2+S+'"SELECT id FROM folders WHERE id = ? "',
+S2+S+'"UNION ALL "',
+S2+S+'"SELECT f.id FROM folders f INNER JOIN pf ON f.parent_id = pf.id) "',
+S2+S+'"SELECT audience_tags FROM assets "',
+S2+S+'"WHERE folder_id IN (SELECT id FROM pf) "',
+S2+S+'"AND audience_tags IS NOT NULL AND audience_tags != \'[]\'"',
+S2+')',
+S2+'rows = conn.execute(sql, (project_id,)).fetchall()',
+S+'else:',
+S2+'rows = conn.execute("SELECT audience_tags FROM assets WHERE audience_tags IS NOT NULL").fetchall()',
+S+'conn.close()',
+S+'all_tags = set()',
+S+'for row in rows:',
+S2+'try:',
+S2+S+'for tag in json.loads(row["audience_tags"] or "[]"):',
+S2+S+S+'all_tags.add(tag)',
+S2+'except: pass',
+S+'return jsonify(sorted(list(all_tags)))',
 '',
 '@app.route("/api/versions/<int:aid>", methods=["GET"])',
 'def get_versions(aid):',

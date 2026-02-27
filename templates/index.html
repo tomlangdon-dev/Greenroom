@@ -1,7 +1,7 @@
 <html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Campaign Manager</title>
+<title>Video Asset Manager</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -9,8 +9,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .hdr{height:58px;background:white;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0;box-shadow:0 1px 3px rgba(0,0,0,.05)}
 .logo{font-size:17px;font-weight:700;color:#1e293b;display:flex;align-items:center;gap:8px;white-space:nowrap;cursor:pointer}
 .breadcrumb{flex:1;font-size:13px;display:flex;align-items:center;flex-wrap:wrap;gap:2px}
-.bc-item{cursor:pointer;color:#64748b;transition:color .15s}
-.bc-item:hover{color:#6366f1}
+.bc-item{cursor:pointer;color:#64748b;transition:color .15s}.bc-item:hover{color:#6366f1}
 .bc-cur{color:#1e293b;font-weight:600;cursor:default}
 .bc-sep{color:#cbd5e0;margin:0 4px;font-size:11px}
 .btn{padding:8px 14px;border-radius:6px;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
@@ -27,6 +26,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .pc-name{font-size:17px;font-weight:700;color:#1e293b;margin-bottom:6px}
 .pc-meta{font-size:12px;color:#94a3b8}
 .home-empty{padding:80px 32px;text-align:center;color:#94a3b8}
+.score-bar{display:flex;height:6px;border-radius:3px;overflow:hidden;margin:14px 0 8px;background:#f1f5f9}
+.sb-g{background:#10b981}.sb-a{background:#f59e0b}.sb-r{background:#ef4444}.sb-u{background:#e2e8f0}
+.pc-dist{display:flex;gap:10px;font-size:11px;color:#94a3b8}
 #project-view{flex:1;overflow:hidden;display:none;flex-direction:row}
 .sidebar{width:240px;background:#0f172a;flex-shrink:0;display:flex;flex-direction:column;overflow:hidden}
 .sidebar-proj-hdr{padding:12px 16px;border-bottom:1px solid #1e293b;flex-shrink:0}
@@ -67,6 +69,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .cph{font-size:40px;opacity:.2}
 .ace{position:absolute;top:8px;right:8px;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:700}
 .ace.green{background:#10b981;color:white}.ace.amber{background:#f59e0b;color:white}.ace.red{background:#ef4444;color:white}.ace.none{background:rgba(255,255,255,.15);color:rgba(255,255,255,.7)}
+.master-badge{position:absolute;bottom:8px;left:8px;background:rgba(99,102,241,.9);color:white;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase}
 .cbody{padding:12px}
 .cname{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:6px}
 .cmeta{display:flex;align-items:center;gap:8px}
@@ -80,7 +83,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .detail-hdr{padding:12px 20px;background:white;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:12px;flex-shrink:0}
 .back-btn{background:none;border:none;font-size:13px;color:#6366f1;cursor:pointer;font-weight:600;padding:6px 10px;border-radius:6px;transition:all .15s;white-space:nowrap}
 .back-btn:hover{background:#f5f3ff}
-.detail-name{flex:1;font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.detail-name-group{flex:1;min-width:0;overflow:hidden}
+.detail-name{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.detail-subname{font-size:11px;color:#94a3b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;display:none}
 .ver-select{padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;cursor:pointer;background:white}
 .ver-select:focus{outline:none;border-color:#6366f1}
 .detail-meta-bar{padding:10px 20px;display:flex;flex-wrap:wrap;gap:6px;border-bottom:1px solid #e2e8f0;background:white;flex-shrink:0}
@@ -145,24 +150,50 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 #ctx-menu,#proj-ctx-menu,#folder-ctx-menu{position:fixed;background:white;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.15);border:1px solid #e2e8f0;padding:4px;z-index:2000;min-width:160px;display:none}
 .ctx-item{padding:9px 14px;font-size:13px;cursor:pointer;border-radius:5px;color:#1e293b;transition:background .1s}
 .ctx-item:hover{background:#f1f5f9}
-.ctx-danger{color:#ef4444}
-.ctx-danger:hover{background:#fef2f2}
-.score-bar{display:flex;height:6px;border-radius:3px;overflow:hidden;margin:14px 0 8px;background:#f1f5f9}
-.sb-g{background:#10b981}
-.sb-a{background:#f59e0b}
-.sb-r{background:#ef4444}
-.sb-u{background:#e2e8f0}
-.pc-dist{display:flex;gap:10px;font-size:11px;color:#94a3b8}
+.ctx-danger{color:#ef4444}.ctx-danger:hover{background:#fef2f2}
+.tag-modal-inner{display:flex;background:white;border-radius:12px;overflow:hidden;max-width:780px;width:95%;max-height:88vh;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.tag-video-panel{width:280px;flex-shrink:0;background:#000;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.tag-video-panel video{width:100%;height:100%;object-fit:contain}
+.tag-form-panel{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.tag-form-hdr{padding:18px 24px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.tag-form-hdr h2{font-size:15px;font-weight:700}
+.tag-form-body{flex:1;overflow-y:auto;padding:20px 24px}
+.tag-form-ftr{padding:14px 24px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:8px;flex-shrink:0}
+.tag-section{margin-bottom:18px}
+.tag-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#94a3b8;margin-bottom:8px;display:flex;align-items:center;gap:4px}
+.tag-required{color:#ef4444;font-size:12px}
+.tag-name-input{width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;color:#1e293b;transition:border-color .15s;font-family:inherit}
+.tag-name-input:focus{outline:none;border-color:#6366f1}
+.pill-group{display:flex;flex-wrap:wrap;gap:6px}
+.pill{padding:7px 14px;border-radius:20px;border:1.5px solid #e2e8f0;background:white;font-size:12px;cursor:pointer;transition:all .15s;color:#475569;font-weight:500;line-height:1}
+.pill:hover{border-color:#6366f1;color:#6366f1}
+.pill.active{background:#6366f1;border-color:#6366f1;color:white;font-weight:600}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0}
+.toggle-label{font-size:13px;font-weight:600;color:#1e293b}
+.toggle-sub{font-size:11px;color:#94a3b8;margin-top:2px}
+.toggle{position:relative;width:44px;height:24px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.toggle-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#e2e8f0;border-radius:24px;transition:.2s}
+.toggle-slider:before{position:absolute;content:"";height:18px;width:18px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle input:checked + .toggle-slider{background:#6366f1}
+.toggle input:checked + .toggle-slider:before{transform:translateX(20px)}
+.tag-input-wrap{border:1.5px solid #e2e8f0;border-radius:8px;padding:6px 8px;display:flex;flex-wrap:wrap;gap:5px;min-height:42px;cursor:text;transition:border-color .15s;align-items:center}
+.tag-input-wrap:focus-within{border-color:#6366f1}
+.tag-pill{background:#f5f3ff;color:#6366f1;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:4px;white-space:nowrap}
+.tag-pill-x{cursor:pointer;opacity:.6;font-size:14px;line-height:1;padding:0 2px}
+.tag-pill-x:hover{opacity:1}
+.tag-text-input{border:none;outline:none;font-size:13px;color:#1e293b;min-width:80px;flex:1;background:none;padding:2px 0;font-family:inherit}
+.tag-suggestions{position:absolute;top:calc(100% + 4px);left:0;right:0;background:white;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.1);z-index:100;overflow:hidden;max-height:160px;overflow-y:auto}
+.tag-suggestion-item{padding:9px 14px;font-size:13px;cursor:pointer;transition:background .1s}
+.tag-suggestion-item:hover{background:#f5f3ff;color:#6366f1}
 </style>
 </head>
 <body>
-
 <div class="hdr">
-  <div class="logo" onclick="showHome()">🎬 Campaign Manager</div>
+  <div class="logo" onclick="showHome()">🎬 VAM</div>
   <div class="breadcrumb" id="breadcrumb"></div>
   <div id="hdr-btns" style="display:flex;gap:8px"></div>
 </div>
-
 <div class="body">
   <div id="home-view">
     <div class="home-toolbar">
@@ -170,7 +201,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
     </div>
     <div class="project-grid" id="project-grid"></div>
   </div>
-
   <div id="project-view">
     <div class="sidebar">
       <div class="sidebar-proj-hdr">
@@ -196,7 +226,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
       <div id="detail-view">
         <div class="detail-hdr">
           <button class="back-btn" onclick="closeDetail()">← Back</button>
-          <span class="detail-name" id="detail-name"></span>
+          <div class="detail-name-group">
+            <div class="detail-name" id="detail-name"></div>
+            <div class="detail-subname" id="detail-subname"></div>
+          </div>
           <select class="ver-select" id="version-select" onchange="switchVersion(this.value)"></select>
         </div>
         <div class="detail-meta-bar" id="detail-meta"></div>
@@ -210,34 +243,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 </div>
 
 <div class="drag-overlay" id="drag-overlay">
-  <div class="drag-msg">
-    <div class="di">🎬</div>
-    <h2>Drop to Upload</h2>
-    <p>Drop a video and/or Brainsuite PPTX</p>
-  </div>
+  <div class="drag-msg"><div class="di">🎬</div><h2>Drop to Upload</h2><p>Drop a video and/or Brainsuite PPTX</p></div>
 </div>
 
 <div id="upload-modal" style="display:none">
   <div class="modal-overlay" id="modal-overlay">
     <div class="modal">
-      <div class="modal-hdr">
-        <h2>Upload Asset</h2>
-        <button class="modal-close" onclick="closeUpload()">×</button>
-      </div>
+      <div class="modal-hdr"><h2>Upload Asset</h2><button class="modal-close" onclick="closeUpload()">×</button></div>
       <div class="modal-body">
         <div class="dz" id="video-dz" ondragover="dzOver(event,'video-dz')" ondragleave="dzOut('video-dz')" ondrop="dzDrop(event,'video')">
           <input type="file" id="video-input" accept=".mp4,.mov,.avi,.webm,.mkv" onchange="filePicked('video',this)">
-          <div class="dz-icon">🎬</div>
-          <div class="dz-title">Video File</div>
-          <div class="dz-sub">MP4, MOV, AVI, WebM</div>
+          <div class="dz-icon">🎬</div><div class="dz-title">Video File</div><div class="dz-sub">MP4, MOV, AVI, WebM</div>
           <div class="dz-file" id="video-fname"></div>
         </div>
         <div class="dz" id="pptx-dz" ondragover="dzOver(event,'pptx-dz')" ondragleave="dzOut('pptx-dz')" ondrop="dzDrop(event,'pptx')">
           <input type="file" id="pptx-input" accept=".pptx" onchange="filePicked('pptx',this)">
-          <div class="dz-icon">📊</div>
-          <div class="dz-title">Brainsuite Report <span style="font-weight:400;color:#94a3b8">(optional)</span></div>
-          <div class="dz-sub">PPTX from Brainsuite</div>
-          <div class="dz-file" id="pptx-fname"></div>
+          <div class="dz-icon">📊</div><div class="dz-title">Brainsuite Report <span style="font-weight:400;color:#94a3b8">(optional)</span></div>
+          <div class="dz-sub">PPTX from Brainsuite</div><div class="dz-file" id="pptx-fname"></div>
         </div>
         <div id="upstatus" style="display:none"></div>
       </div>
@@ -252,472 +274,301 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 <div id="move-modal" style="display:none">
   <div class="modal-overlay" id="move-overlay">
     <div class="modal">
-      <div class="modal-hdr">
-        <h2>Move to Folder</h2>
-        <button class="modal-close" onclick="closeMoveModal()">×</button>
-      </div>
-      <div class="modal-body" style="padding:8px 12px">
-        <div id="move-list" class="move-list"></div>
-      </div>
+      <div class="modal-hdr"><h2>Move to Folder</h2><button class="modal-close" onclick="closeMoveModal()">×</button></div>
+      <div class="modal-body" style="padding:8px 12px"><div id="move-list" class="move-list"></div></div>
     </div>
   </div>
 </div>
 
 <div id="report-modal" style="display:none">
-<div class="modal-overlay" id="report-overlay">
-  <div class="modal">
-    <div class="modal-hdr">
-      <h2>Add Brainsuite Report</h2>
-      <button class="modal-close" onclick="closeReportModal()">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="dz" id="report-dz" ondragover="dzOver(event,'report-dz')" ondragleave="dzOut('report-dz')" ondrop="reportDrop(event)">
-        <input type="file" id="report-input" accept=".pptx" onchange="reportPicked(this)">
-        <div class="dz-icon">📊</div>
-        <div class="dz-title">Brainsuite PPTX Report</div>
-        <div class="dz-sub">Drop or click to browse</div>
-        <div class="dz-file" id="report-fname"></div>
+  <div class="modal-overlay" id="report-overlay">
+    <div class="modal">
+      <div class="modal-hdr"><h2>Add Brainsuite Report</h2><button class="modal-close" onclick="closeReportModal()">×</button></div>
+      <div class="modal-body">
+        <div class="dz" id="report-dz" ondragover="dzOver(event,'report-dz')" ondragleave="dzOut('report-dz')" ondrop="reportDrop(event)">
+          <input type="file" id="report-input" accept=".pptx" onchange="reportPicked(this)">
+          <div class="dz-icon">📊</div><div class="dz-title">Brainsuite PPTX Report</div>
+          <div class="dz-sub">Drop or click to browse</div><div class="dz-file" id="report-fname"></div>
+        </div>
+        <div id="report-status" style="display:none"></div>
       </div>
-      <div id="report-status" style="display:none"></div>
-    </div>
-    <div class="modal-ftr">
-      <button class="btn btn-ghost" onclick="closeReportModal()">Cancel</button>
-      <button class="btn btn-primary" id="report-submit" onclick="submitReport()">Add Report</button>
+      <div class="modal-ftr">
+        <button class="btn btn-ghost" onclick="closeReportModal()">Cancel</button>
+        <button class="btn btn-primary" id="report-submit" onclick="submitReport()">Add Report</button>
+      </div>
     </div>
   </div>
 </div>
+
+<div id="tag-modal" style="display:none">
+  <div class="modal-overlay" id="tag-overlay">
+    <div class="tag-modal-inner">
+      <div class="tag-video-panel">
+        <video id="tag-video" muted="" loop="" playsinline=""></video>
+      </div>
+      <div class="tag-form-panel">
+        <div class="tag-form-hdr">
+          <h2>Tag Asset</h2>
+          <button class="modal-close" onclick="submitTags(true)">×</button>
+        </div>
+        <div class="tag-form-body">
+          <div class="tag-section">
+            <div class="tag-label">Display Name</div>
+            <input type="text" id="tag-display-name" class="tag-name-input" placeholder="Asset name...">
+          </div>
+          <div class="tag-section">
+            <div class="tag-label">Phase <span class="tag-required">*</span></div>
+            <div class="pill-group" id="tag-phases"></div>
+          </div>
+          <div class="tag-section">
+            <div class="tag-label">Platform <span class="tag-required">*</span></div>
+            <div class="pill-group" id="tag-platforms"></div>
+          </div>
+          <div class="tag-section">
+            <div class="tag-label">Format <span style="color:#cbd5e0;font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">optional</span></div>
+            <div class="pill-group" id="tag-formats"></div>
+          </div>
+          <div class="tag-section">
+            <div class="toggle-row">
+              <div>
+                <div class="toggle-label">Master Asset</div>
+                <div class="toggle-sub">Only masters should require testing</div>
+              </div>
+              <label class="toggle">
+                <input type="checkbox" id="tag-master" onchange="tagState.isMaster=this.checked">
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="tag-section" style="position:relative">
+            <div class="tag-label">Audience Tags <span style="color:#cbd5e0;font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">optional</span></div>
+            <div class="tag-input-wrap" id="tag-input-wrap" onclick="document.getElementById('tag-text-input').focus()">
+              <input type="text" id="tag-text-input" class="tag-text-input" placeholder="Type to add..." onkeydown="handleTagKeydown(event)" oninput="handleTagInput(event)" onblur="setTimeout(hideSuggestions,150)">
+            </div>
+            <div id="tag-suggestions" class="tag-suggestions" style="display:none"></div>
+          </div>
+        </div>
+        <div class="tag-form-ftr">
+          <button class="btn btn-ghost" onclick="submitTags(true)">Skip for now</button>
+          <button class="btn btn-primary" id="tag-confirm" onclick="submitTags(false)" disabled="">Confirm →</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <div id="ctx-menu">
-<div class="ctx-item" onclick="addReportFromCtx();hideCtx()">📊 Add Report</div>
-<div class="ctx-item" onclick="var id=ctxId;hideCtx();moveAsset(id)">📁 Move to folder...</div>
-<div class="ctx-item ctx-danger" onclick="var id=ctxId;hideCtx();deleteAssetCard(id)">🗑 Delete</div>
+  <div class="ctx-item" onclick="addReportFromCtx();hideCtx()">📊 Add Report</div>
+  <div class="ctx-item" onclick="var id=ctxId;hideCtx();moveAsset(id)">📁 Move to folder...</div>
+  <div class="ctx-item ctx-danger" onclick="var id=ctxId;hideCtx();deleteAssetCard(id)">🗑 Delete</div>
 </div>
-
 <div id="proj-ctx-menu">
-<div class="ctx-item" onclick="renameProjCtx();hideProjCtx()">✏️ Rename project</div>
-<div class="ctx-item ctx-danger" onclick="deleteProjCtx();hideProjCtx()">🗑 Delete project</div>
+  <div class="ctx-item" onclick="renameProjCtx();hideProjCtx()">✏️ Rename project</div>
+  <div class="ctx-item ctx-danger" onclick="deleteProjCtx();hideProjCtx()">🗑 Delete project</div>
 </div>
-
 <div id="folder-ctx-menu">
-<div class="ctx-item" onclick="folderCtxRename();hideFolderCtx()">✏️ Rename</div>
-<div class="ctx-item ctx-danger" onclick="folderCtxDelete();hideFolderCtx()">🗑 Delete</div>
+  <div class="ctx-item" onclick="folderCtxRename();hideFolderCtx()">✏️ Rename</div>
+  <div class="ctx-item ctx-danger" onclick="folderCtxDelete();hideFolderCtx()">🗑 Delete</div>
 </div>
 
 <script>
 var state = { folderId:null, projectId:null, folders:[], assets:[], currentAsset:null, draggingAssetId:null };
 var uploadFiles = { video:null, pptx:null };
-var ctxId = null, projCtxId = null, moveAssetId = null, dragCounter = 0;
+var ctxId=null, projCtxId=null, folderCtxId=null, moveAssetId=null, dragCounter=0;
+var reportVersionId=null, reportFile=null, reportVideoName=null;
 var colorValues = { red:0, amber:50, green:100 };
 var projectStats = {};
+
+var PHASES = ['Reach','Action'];
+var PLATFORMS = ['Meta','Snapchat','TikTok','OLV','YouTube','Pinterest'];
+var FORMATS = ['4x5','9x16','16x9','1x1','2x3'];
+
+var tagState = { assetId:null, videoUrl:null, baseName:null, projectId:null, phase:null, platform:null, format:null, isMaster:false, audienceTags:[], suggestions:[] };
 
 async function api(url, opts) {
   var res = await fetch(url, Object.assign({ headers:{"Content-Type":"application/json"} }, opts||{}));
   return res.json();
 }
 
-async function loadFolders() {
-  state.folders = await api("/api/folders");
-}
+async function loadFolders() { state.folders = await api("/api/folders"); }
 
-// ── Home ─────────────────────────────────────────────────────────────────────
 async function showHome() {
-pauseVideo();
-state.folderId = null;
-state.projectId = null;
-state.assets = [];
-document.getElementById("detail-view").style.display = "none";
-document.getElementById("grid-view").style.display = "block";
-document.getElementById("home-view").style.display = "block";
-document.getElementById("project-view").style.display = "none";
-document.getElementById("breadcrumb").innerHTML = "";
-document.getElementById("hdr-btns").innerHTML = '<button class="btn btn-primary" onclick="newProject()">+ New Project</button>';
-try { projectStats = await api("/api/projects/stats"); } catch(e) { projectStats = {}; }
-renderHome();
+  pauseVideo();
+  state.folderId=null; state.projectId=null; state.assets=[];
+  document.getElementById("detail-view").style.display="none";
+  document.getElementById("grid-view").style.display="block";
+  document.getElementById("home-view").style.display="block";
+  document.getElementById("project-view").style.display="none";
+  document.getElementById("breadcrumb").innerHTML="";
+  document.getElementById("hdr-btns").innerHTML='<button class="btn btn-primary" onclick="newProject()">+ New Project</button>';
+  try { projectStats = await api("/api/projects/stats"); } catch(e) { projectStats={}; }
+  renderHome();
 }
 
 function renderHome() {
   var grid = document.getElementById("project-grid");
   var projects = state.folders.filter(function(f){ return !f.parent_id; });
-  if (!projects.length) {
-    grid.innerHTML = '<div class="home-empty"><div style="font-size:64px;margin-bottom:20px">📁</div><div style="font-size:20px;font-weight:600;color:#64748b;margin-bottom:8px">No projects yet</div><div style="font-size:14px;color:#94a3b8">Click + New Project to get started</div></div>';
-    return;
-  }
-grid.innerHTML = projects.map(function(f) {
-var s = projectStats[String(f.id)] || {total:0,green:0,amber:0,red:0,unscored:0};
-var subs = state.folders.filter(function(c){ return c.parent_id===f.id; }).length;
-var meta = [];
-if (subs) meta.push(subs+' folder'+(subs!==1?'s':''));
-if (s.total) meta.push(s.total+' asset'+(s.total!==1?'s':''));
-var bar = '', dist = '';
-if (s.total > 0) {
-  var t = s.total;
-  bar = '<div class="score-bar">' +
-    '<div class="sb-g" style="width:'+(s.green/t*100)+'%"></div>' +
-    '<div class="sb-a" style="width:'+(s.amber/t*100)+'%"></div>' +
-    '<div class="sb-r" style="width:'+(s.red/t*100)+'%"></div>' +
-    '<div class="sb-u" style="width:'+(s.unscored/t*100)+'%"></div>' +
-    '</div>';
-  var parts = [];
-  if (s.green)   parts.push('<span>🟢 '+s.green+'</span>');
-  if (s.amber)   parts.push('<span>🟡 '+s.amber+'</span>');
-  if (s.red)     parts.push('<span>🔴 '+s.red+'</span>');
-  if (s.unscored) parts.push('<span>○ '+s.unscored+'</span>');
-  dist = '<div class="pc-dist">'+parts.join('')+'</div>';
-}
-var h = '<div class="project-card" data-id="'+f.id+'" onclick="enterProject('+f.id+')">';
-h += '<div class="pc-icon">📁</div>';
-h += '<div class="pc-name">'+f.name+'</div>';
-h += '<div class="pc-meta">'+(meta.join(' · ')||'Empty project')+'</div>';
-h += bar + dist;
-h += '</div>';
-return h;
-}).join("");
-  grid.querySelectorAll(".project-card").forEach(function(card) {
-    card.addEventListener("contextmenu", function(e) { e.preventDefault(); showProjCtx(e, parseInt(card.dataset.id)); });
-  });
+  if (!projects.length) { grid.innerHTML='<div class="home-empty"><div style="font-size:64px;margin-bottom:20px">📁</div><div style="font-size:20px;font-weight:600;color:#64748b;margin-bottom:8px">No projects yet</div><div style="font-size:14px">Click + New Project to get started</div></div>'; return; }
+  grid.innerHTML = projects.map(function(f) {
+    var s = projectStats[String(f.id)] || {total:0,green:0,amber:0,red:0,unscored:0};
+    var subs = state.folders.filter(function(c){ return c.parent_id===f.id; }).length;
+    var meta = []; if(subs) meta.push(subs+' folder'+(subs!==1?'s':'')); if(s.total) meta.push(s.total+' asset'+(s.total!==1?'s':''));
+    var bar='', dist='';
+    if (s.total>0) {
+      var t=s.total;
+      bar='<div class="score-bar"><div class="sb-g" style="width:'+(s.green/t*100)+'%"></div><div class="sb-a" style="width:'+(s.amber/t*100)+'%"></div><div class="sb-r" style="width:'+(s.red/t*100)+'%"></div><div class="sb-u" style="width:'+(s.unscored/t*100)+'%"></div></div>';
+      var parts=[]; if(s.green) parts.push('<span>🟢 '+s.green+'</span>'); if(s.amber) parts.push('<span>🟡 '+s.amber+'</span>'); if(s.red) parts.push('<span>🔴 '+s.red+'</span>'); if(s.unscored) parts.push('<span>○ '+s.unscored+'</span>');
+      dist='<div class="pc-dist">'+parts.join('')+'</div>';
+    }
+    return '<div class="project-card" data-id="'+f.id+'" onclick="enterProject('+f.id+')">'+'<div class="pc-icon">📁</div><div class="pc-name">'+f.name+'</div><div class="pc-meta">'+(meta.join(' · ')||'Empty project')+'</div>'+bar+dist+'</div>';
+  }).join("");
+  grid.querySelectorAll(".project-card").forEach(function(card){ card.addEventListener("contextmenu",function(e){e.preventDefault();showProjCtx(e,parseInt(card.dataset.id));}); });
 }
 
-async function newProject() {
-  var name = prompt("Project name:");
-  if (!name || !name.trim()) return;
-  await api("/api/folders", {method:"POST", body:JSON.stringify({name:name.trim(), parent_id:null})});
-  await loadFolders();
-  renderHome();
-}
+async function newProject() { var name=prompt("Project name:"); if(!name||!name.trim()) return; await api("/api/folders",{method:"POST",body:JSON.stringify({name:name.trim(),parent_id:null})}); await loadFolders(); renderHome(); }
 
-function showProjCtx(e, id) {
-  projCtxId = id;
-  var m = document.getElementById("proj-ctx-menu");
-  m.style.display = "block";
-  m.style.left = e.clientX+"px"; m.style.top = e.clientY+"px";
-  var r = m.getBoundingClientRect();
-  if (r.right > window.innerWidth) m.style.left = (e.clientX-r.width)+"px";
-  if (r.bottom > window.innerHeight) m.style.top = (e.clientY-r.height)+"px";
-}
-function hideProjCtx() { document.getElementById("proj-ctx-menu").style.display="none"; projCtxId=null; }
-async function renameProjCtx() {
-  if (!projCtxId) return;
-  var f = state.folders.find(function(x){ return x.id===projCtxId; });
-  var name = prompt("Rename project:", f?f.name:"");
-  if (!name || name===(f&&f.name)) return;
-  await api("/api/folders/"+projCtxId, {method:"PUT", body:JSON.stringify({name:name})});
-  await loadFolders();
-  renderHome();
-}
-async function deleteProjCtx() {
-if (!projCtxId) return;
-var id = projCtxId;
-hideProjCtx();
-await safeDeleteFolder(id, async function(){
-  await loadFolders();
-  renderHome();
-});
-}
-
-// ── Project View ──────────────────────────────────────────────────────────────
-function enterProject(id) {
-  state.projectId = id;
-  document.getElementById("home-view").style.display = "none";
-  document.getElementById("project-view").style.display = "flex";
-  loadAssets(id);
-}
+function enterProject(id) { state.projectId=id; document.getElementById("home-view").style.display="none"; document.getElementById("project-view").style.display="flex"; loadAssets(id); }
 
 async function loadAssets(fid) {
-  state.folderId = (fid !== undefined) ? fid : null;
-  pauseVideo();
-  document.getElementById("detail-view").style.display = "none";
-  document.getElementById("grid-view").style.display = "block";
-  var url = fid ? "/api/assets?folder_id="+fid : "/api/assets";
-  state.assets = await api(url);
-  renderSidebar();
-  renderGrid();
-  renderBreadcrumb();
-}
-
-function pauseVideo() {
-  var p = document.getElementById("video-player");
-  if (p) { p.pause(); p.src = ""; }
-}
-
-function renderBreadcrumb() {
-  var bc = document.getElementById("breadcrumb");
-  var btns = document.getElementById("hdr-btns");
-  if (!state.projectId) { bc.innerHTML=""; return; }
-  var project = state.folders.find(function(f){ return f.id===state.projectId; });
-  var path = [];
-  var id = state.folderId;
-  while (id && id !== state.projectId) {
-    var folder = state.folders.find(function(f){ return f.id===id; });
-    if (!folder) break;
-    path.unshift({id:folder.id, name:folder.name});
-    id = folder.parent_id;
-  }
-  var html = '<span class="bc-item" onclick="showHome()">Projects</span><span class="bc-sep">›</span>';
-  if (state.folderId === state.projectId) {
-    html += '<span class="bc-cur">'+(project?project.name:'')+'</span>';
-  } else {
-    html += '<span class="bc-item" onclick="loadAssets('+state.projectId+')">'+(project?project.name:'')+'</span>';
-  }
-  path.forEach(function(item, i) {
-    html += '<span class="bc-sep">›</span>';
-    html += (i===path.length-1) ? '<span class="bc-cur">'+item.name+'</span>' : '<span class="bc-item" onclick="loadAssets('+item.id+')">'+item.name+'</span>';
-  });
-  bc.innerHTML = html;
-  document.getElementById("mtitle").textContent = path.length ? path[path.length-1].name : (project?project.name:'');
-  btns.innerHTML = '<button class="btn btn-ghost" onclick="showFolderInput()">+ Folder</button><button class="btn btn-primary" onclick="showUpload()">⬆ Upload</button>';
-}
-
-function renderSidebar() {
-  var tree = document.getElementById("folder-tree");
-  tree.innerHTML = "";
-  if (!state.projectId) return;
-  state.folders.filter(function(f){ return f.parent_id===state.projectId; }).forEach(function(f){ addFolder(f,tree,0); });
-}
-
-function makeRow(id, label, depth) {
-  var row = document.createElement("div");
-  row.className = "frow"+(state.folderId===id?" active":"");
-  row.style.paddingLeft = (12+depth*14)+"px";
-  var acts = '<span class="factions"><button class="ibtn" onclick="event.stopPropagation();renameF('+id+')">✏️</button><button class="ibtn" onclick="event.stopPropagation();deleteF('+id+')">🗑</button></span>';
-  row.innerHTML = '<span class="ficon">📁</span><span class="fname">'+label+'</span>'+acts;
-  row.onclick = function() { loadAssets(id); };
-  return row;
-}
-function addFolder(folder, container, depth) {
-  container.appendChild(makeRow(folder.id, folder.name, depth));
-  state.folders.filter(function(f){ return f.parent_id===folder.id; }).forEach(function(c){ addFolder(c,container,depth+1); });
-}
-
-function renderGrid() {
-  var grid = document.getElementById("grid");
-  var subFolders = state.folders.filter(function(f){ return f.parent_id===state.folderId; });
-  var parts = [];
-  if (subFolders.length) parts.push(subFolders.length+" folder"+(subFolders.length!==1?"s":""));
-  if (state.assets.length) parts.push(state.assets.length+" asset"+(state.assets.length!==1?"s":""));
-  document.getElementById("mcount").textContent = parts.join(", ");
-  if (!subFolders.length && !state.assets.length) {
-    grid.innerHTML = '<div class="empty"><div class="eicon">📁</div><div class="etitle">This folder is empty</div><div class="esub">Upload a video or create a sub-folder</div></div>';
-    return;
-  }
-  grid.innerHTML = subFolders.map(makeFolderCard).join("")+state.assets.map(makeCard).join("");
-  grid.querySelectorAll(".card[data-video]").forEach(function(card){ if(card.dataset.video) initCardPreview(card); });
-}
-
-function makeFolderCard(folder) {
-  var subs = state.folders.filter(function(f){ return f.parent_id===folder.id; }).length;
-  var h = '<div class="folder-card" onclick="loadAssets('+folder.id+')" oncontextmenu="showFolderCtx(event,'+folder.id+')" ondragover="folderDragOver(event,this)" ondragleave="folderDragLeave(this)" ondrop="folderDrop(event,'+folder.id+')">';
-  h += '<div class="fc-thumb">📁</div>';
-  h += '<div class="fc-body"><div class="fc-name">'+folder.name+'</div>';
-  if (subs) h += '<div class="fc-meta">'+subs+' sub-folder'+(subs!==1?'s':'')+'</div>';
-  h += '</div></div>';
-  return h;
-}
-
-function makeCard(a) {
-  var s = a.ace_score;
-  var cls = s===null?"none":s>=67?"green":s>=34?"amber":"red";
-  var thumb = a.thumbnail ? '<img src="'+a.thumbnail+'" alt="" draggable="false">' : '<span class="cph">🎬</span>';
-  var date = a.uploaded_at ? new Date(a.uploaded_at).toLocaleDateString("en-GB",{day:"numeric",month:"short"}) : "";
-  var ace = s!==null?"ACE "+s:"No score";
-  var h = '<div class="card" data-video="'+(a.video_filename||'')+'" draggable="true" onclick="openAsset('+a.id+')" oncontextmenu="showCtx(event,'+a.id+')" ondragstart="cardDragStart(event,'+a.id+')" ondragend="cardDragEnd()">';
-  h += '<div class="cthumb">'+thumb+'<span class="ace '+cls+'">'+ace+'</span></div>';
-  h += '<div class="cbody"><div class="cname" title="'+a.base_name+'">'+a.base_name+'</div>';
-  h += '<div class="cmeta"><span class="vtag">v'+(a.latest_version||1)+'</span><span class="cdate">'+date+'</span></div>';
-  h += '</div></div>';
-  return h;
-}
-
-function showFolderInput() { document.getElementById("finput-row").style.display="block"; document.getElementById("finput").focus(); }
-function handleFolderKey(e) { if(e.key==="Enter") saveFolder(); if(e.key==="Escape") hideFolderInput(); }
-async function saveFolder() {
-  var name = document.getElementById("finput").value.trim();
-  if (!name) { hideFolderInput(); return; }
-  await api("/api/folders", {method:"POST", body:JSON.stringify({name:name, parent_id:state.folderId})});
-  hideFolderInput();
-  await loadFolders();
-  renderGrid();
-  renderSidebar();
-}
-function hideFolderInput() { document.getElementById("finput-row").style.display="none"; document.getElementById("finput").value=""; }
-
-async function deleteF(id) {
-await safeDeleteFolder(id, async function(){
-  if (state.folderId===id) state.folderId = state.projectId;
-  await loadFolders();
-  loadAssets(state.folderId);
-});
-}
-async function renameF(id) {
-  var f = state.folders.find(function(x){ return x.id===id; });
-  var name = prompt("Rename:", f?f.name:"");
-  if (!name || name===(f&&f.name)) return;
-  await api("/api/folders/"+id, {method:"PUT", body:JSON.stringify({name:name})});
-  await loadFolders();
-  renderSidebar();
-  renderBreadcrumb();
-}
-async function deleteAssetCard(id) {
-  var a = state.assets.find(function(x){ return x.id===id; });
-  if (!confirm('Delete "'+(a?a.base_name:"this asset")+'"? Cannot be undone.')) return;
-  await api("/api/assets/"+id, {method:"DELETE"});
-  loadAssets(state.folderId);
-}
-
-// ── Move ──────────────────────────────────────────────────────────────────────
-function moveAsset(assetId) {
-  moveAssetId = assetId;
-  var asset = state.assets.find(function(a){ return a.id===assetId; });
-  var list = document.getElementById("move-list");
-  var html = '<div class="move-opt'+(state.folderId===null?" cur":"")+'" onclick="submitMove('+assetId+',null)">📂 Root (no folder)</div>';
-  function addOpt(folder, depth) {
-    var isCur = asset && asset.folder_id===folder.id;
-    html += '<div class="move-opt'+(isCur?" cur":"")+'" style="padding-left:'+(14+depth*16)+'px" onclick="submitMove('+assetId+','+folder.id+')">📁 '+folder.name+'</div>';
-    state.folders.filter(function(f){ return f.parent_id===folder.id; }).forEach(function(c){ addOpt(c,depth+1); });
-  }
-  state.folders.filter(function(f){ return !f.parent_id; }).forEach(function(f){ addOpt(f,0); });
-  list.innerHTML = html;
-  document.getElementById("move-modal").style.display = "block";
-}
-function closeMoveModal() { document.getElementById("move-modal").style.display="none"; moveAssetId=null; }
-async function submitMove(assetId, folderId) {
-  await fetch("/api/assets/"+assetId, {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({folder_id:folderId})});
-  closeMoveModal();
-  loadAssets(state.folderId);
-}
-
-// ── Context Menus ─────────────────────────────────────────────────────────────
-function showCtx(e, id) {
-  e.preventDefault(); e.stopPropagation(); ctxId=id;
-  var asset = state.assets.find(function(a){ return a.id===id; });
-var rptItem = document.querySelector("#ctx-menu .ctx-item:first-child");
-rptItem.style.display = (asset && asset.ace_score === null) ? "block" : "none";
-  var m=document.getElementById("ctx-menu"); m.style.display="block";
-  m.style.left=e.clientX+"px"; m.style.top=e.clientY+"px";
-  var r=m.getBoundingClientRect();
-  if(r.right>window.innerWidth) m.style.left=(e.clientX-r.width)+"px";
-  if(r.bottom>window.innerHeight) m.style.top=(e.clientY-r.height)+"px";
-}
-function hideCtx() { document.getElementById("ctx-menu").style.display="none"; ctxId=null; }
-document.addEventListener("click", function(e){
-if(!e.target.closest("#ctx-menu")) hideCtx();
-if(!e.target.closest("#proj-ctx-menu")) hideProjCtx();
-if(!e.target.closest("#folder-ctx-menu")) hideFolderCtx();
-});
-
-// ── Detail View ───────────────────────────────────────────────────────────────
-async function openAsset(id) {
-  var versions = await api("/api/versions/"+id);
-  if (!versions.length) return;
-  var asset = state.assets.find(function(a){ return a.id===id; });
-  state.currentAsset = {id:id, versions:versions, asset:asset};
-  renderDetail(asset, versions[0]);
-  document.getElementById("grid-view").style.display="none";
-  document.getElementById("detail-view").style.display="flex";
-}
-function closeDetail() {
+  state.folderId=(fid!==undefined)?fid:null;
   pauseVideo();
   document.getElementById("detail-view").style.display="none";
   document.getElementById("grid-view").style.display="block";
-}
-function renderDetail(asset, version) {
-  var info={};
-  try{if(version.asset_info)info=JSON.parse(version.asset_info);}catch(e){}
-  document.getElementById("detail-name").textContent = asset.base_name;
-  var sel=document.getElementById("version-select");
-  sel.innerHTML=state.currentAsset.versions.map(function(v){
-    return '<option value="'+v.id+'"'+(v.id===version.id?" selected":"")+'>v'+v.version_number+(v.is_latest?" (latest)":"")+'</option>';
-  }).join("");
-  var player=document.getElementById("video-player");
-  player.src=version.video_filename?"/uploads/videos/"+version.video_filename:"";
-  player.load();
-  var tags=[];
-  if(info.brand) tags.push("🏷️ "+info.brand);
-  if(info.platform) tags.push("📱 "+info.platform);
-  if(info.company) tags.push("🏢 "+info.company);
-  if(info.date) tags.push("📅 "+info.date);
-  var mb=document.getElementById("detail-meta");
-  mb.innerHTML=tags.map(function(t){ return '<span class="meta-tag">'+t+'</span>'; }).join("");
-  mb.style.display=tags.length?"flex":"none";
-  renderScores(version);
-  var btn = document.getElementById("add-report-btn");
-if (!btn) {
-btn = document.createElement("button");
-btn.id = "add-report-btn";
-btn.className = "btn btn-ghost";
-btn.style.fontSize = "12px";
-document.querySelector(".detail-hdr").appendChild(btn);
-}
-btn.textContent = version.kpi_data ? "📊 Replace Report" : "📊 Add Report";
-btn.onclick = function(){ showReportModal(version.id, version.video_filename); };
-}
-async function switchVersion(versionId) {
-  var v=state.currentAsset.versions.find(function(x){ return x.id===parseInt(versionId); });
-  if(v) renderDetail(state.currentAsset.asset,v);
-}
-function renderScores(version) {
-  var el=document.getElementById("scores-content");
-  if(!version.kpi_data||!version.ace_score){el.innerHTML='<div class="no-score">No Brainsuite report paired<br>with this version</div>';return;}
-  var cats;try{cats=JSON.parse(version.kpi_data);}catch(e){el.innerHTML='<div class="no-score">Could not read score data</div>';return;}
-  var ace=version.ace_score,ac=ace>=67?"ace-green":ace>=34?"ace-amber":"ace-red",as=ace>=67?"Green":ace>=34?"Amber":"Red";
-  var html='<div class="ace-display '+ac+'"><div class="ace-num">'+ace+'</div><div class="ace-lbl">ACE Score</div><div class="ace-stat">'+as+'</div></div><div class="cats">';
-  Object.keys(cats).forEach(function(key){
-    var cat=cats[key],sum=cat.kpis.reduce(function(a,k){return a+colorValues[k.original];},0),score=Math.round(sum/cat.kpis.length);
-    var sc=score>=67?"cg":score>=34?"ca":"cr";
-    html+='<div class="cat-sec"><div class="cat-hdr" onclick="toggleCat(\''+key+'\')"><span class="cat-nm">'+cat.name+'</span><span class="cat-wt">×'+cat.weight+'</span><span class="cat-sc '+sc+'">'+score+'</span><span class="cat-chv" id="chev-'+key+'">▼</span></div>';
-    html+='<div class="cat-kpis" id="kpis-'+key+'" style="display:none">';
-    cat.kpis.forEach(function(kpi){var bc=kpi.original==="green"?"kg":kpi.original==="amber"?"kam":"kred";html+='<div class="kpi-row"><span class="kpi-nm">'+kpi.name+'</span><span class="kpi-badge '+bc+'">'+kpi.value+'</span></div>';});
-    html+='</div></div>';
-  });
-  el.innerHTML=html+'</div>';
-}
-function toggleCat(key){
-  var el=document.getElementById("kpis-"+key),chev=document.getElementById("chev-"+key),open=el.style.display==="none";
-  el.style.display=open?"block":"none";chev.className="cat-chv"+(open?" open":"");
+  var url=fid?"/api/assets?folder_id="+fid:"/api/assets";
+  state.assets=await api(url);
+  renderSidebar(); renderGrid(); renderBreadcrumb();
 }
 
-// ── Upload ────────────────────────────────────────────────────────────────────
-function showUpload(){
-  if(!state.projectId){alert("Please open a project first.");return;}
-  uploadFiles={video:null,pptx:null};
-  document.getElementById("video-fname").textContent="";document.getElementById("pptx-fname").textContent="";
-  document.getElementById("upstatus").style.display="none";document.getElementById("upload-submit").disabled=false;
-  document.getElementById("upload-modal").style.display="block";
+function pauseVideo() { var p=document.getElementById("video-player"); if(p){p.pause();p.src="";} }
+
+function renderBreadcrumb() {
+  var bc=document.getElementById("breadcrumb"), btns=document.getElementById("hdr-btns");
+  if (!state.projectId) { bc.innerHTML=""; return; }
+  var project=state.folders.find(function(f){return f.id===state.projectId;});
+  var path=[]; var id=state.folderId;
+  while(id&&id!==state.projectId){var folder=state.folders.find(function(f){return f.id===id;});if(!folder)break;path.unshift({id:folder.id,name:folder.name});id=folder.parent_id;}
+  var html='<span class="bc-item" onclick="showHome()">Projects</span><span class="bc-sep">›</span>';
+  if(state.folderId===state.projectId){html+='<span class="bc-cur">'+(project?project.name:'')+'</span>';}
+  else{html+='<span class="bc-item" onclick="loadAssets('+state.projectId+')">'+(project?project.name:'')+'</span>';}
+  path.forEach(function(item,i){html+='<span class="bc-sep">›</span>';html+=(i===path.length-1)?'<span class="bc-cur">'+item.name+'</span>':'<span class="bc-item" onclick="loadAssets('+item.id+')">'+item.name+'</span>';});
+  bc.innerHTML=html;
+  document.getElementById("mtitle").textContent=path.length?path[path.length-1].name:(project?project.name:'');
+  btns.innerHTML='<button class="btn btn-ghost" onclick="showFolderInput()">+ Folder</button><button class="btn btn-primary" onclick="showUpload()">⬆ Upload</button>';
 }
+
+function renderSidebar() {
+  var tree=document.getElementById("folder-tree"); tree.innerHTML="";
+  if(!state.projectId) return;
+  state.folders.filter(function(f){return f.parent_id===state.projectId;}).forEach(function(f){addFolder(f,tree,0);});
+}
+function makeRow(id,label,depth){var row=document.createElement("div");row.className="frow"+(state.folderId===id?" active":"");row.style.paddingLeft=(12+depth*14)+"px";var acts='<span class="factions"><button class="ibtn" onclick="event.stopPropagation();renameF('+id+')">✏️</button><button class="ibtn" onclick="event.stopPropagation();deleteF('+id+')">🗑</button></span>';row.innerHTML='<span class="ficon">📁</span><span class="fname">'+label+'</span>'+acts;row.onclick=function(){loadAssets(id);};return row;}
+function addFolder(folder,container,depth){container.appendChild(makeRow(folder.id,folder.name,depth));state.folders.filter(function(f){return f.parent_id===folder.id;}).forEach(function(c){addFolder(c,container,depth+1);});}
+
+function renderGrid() {
+  var grid=document.getElementById("grid");
+  var subFolders=state.folders.filter(function(f){return f.parent_id===state.folderId;});
+  var parts=[]; if(subFolders.length) parts.push(subFolders.length+" folder"+(subFolders.length!==1?"s":"")); if(state.assets.length) parts.push(state.assets.length+" asset"+(state.assets.length!==1?"s":""));
+  document.getElementById("mcount").textContent=parts.join(", ");
+  if(!subFolders.length&&!state.assets.length){grid.innerHTML='<div class="empty"><div class="eicon">📁</div><div class="etitle">This folder is empty</div><div class="esub">Upload a video or create a sub-folder</div></div>';return;}
+  grid.innerHTML=subFolders.map(makeFolderCard).join("")+state.assets.map(makeCard).join("");
+  grid.querySelectorAll(".card[data-video]").forEach(function(card){if(card.dataset.video) initCardPreview(card);});
+}
+
+function makeFolderCard(folder){var subs=state.folders.filter(function(f){return f.parent_id===folder.id;}).length;var h='<div class="folder-card" onclick="loadAssets('+folder.id+')" oncontextmenu="showFolderCtx(event,'+folder.id+')" ondragover="folderDragOver(event,this)" ondragleave="folderDragLeave(this)" ondrop="folderDrop(event,'+folder.id+')">';h+='<div class="fc-thumb">📁</div><div class="fc-body"><div class="fc-name">'+folder.name+'</div>';if(subs) h+='<div class="fc-meta">'+subs+' sub-folder'+(subs!==1?'s':'')+'</div>';h+='</div></div>';return h;}
+
+function makeCard(a){
+  var s=a.ace_score;
+  var cls=s===null?"none":s>=67?"green":s>=34?"amber":"red";
+  var thumb=a.thumbnail?'<img src="'+a.thumbnail+'" alt="" draggable="false">':'<span class="cph">🎬</span>';
+  var date=a.uploaded_at?new Date(a.uploaded_at).toLocaleDateString("en-GB",{day:"numeric",month:"short"}):"";
+  var ace=s!==null?"ACE "+s:"No score";
+  var displayName=a.display_name||a.base_name;
+  var masterBadge=a.is_master?'<span class="master-badge">MASTER</span>':'';
+  var h='<div class="card" data-video="'+(a.video_filename||'')+'" draggable="true" onclick="openAsset('+a.id+')" oncontextmenu="showCtx(event,'+a.id+')" ondragstart="cardDragStart(event,'+a.id+')" ondragend="cardDragEnd()">';
+  h+='<div class="cthumb">'+thumb+'<span class="ace '+cls+'">'+ace+'</span>'+masterBadge+'</div>';
+  h+='<div class="cbody"><div class="cname" title="'+displayName+'">'+displayName+'</div>';
+  h+='<div class="cmeta"><span class="vtag">v'+(a.latest_version||1)+'</span><span class="cdate">'+date+'</span></div>';
+  h+='</div></div>';
+  return h;
+}
+
+function showFolderInput(){document.getElementById("finput-row").style.display="block";document.getElementById("finput").focus();}
+function handleFolderKey(e){if(e.key==="Enter")saveFolder();if(e.key==="Escape")hideFolderInput();}
+async function saveFolder(){var name=document.getElementById("finput").value.trim();if(!name){hideFolderInput();return;}await api("/api/folders",{method:"POST",body:JSON.stringify({name:name,parent_id:state.folderId})});hideFolderInput();await loadFolders();renderGrid();renderSidebar();}
+function hideFolderInput(){document.getElementById("finput-row").style.display="none";document.getElementById("finput").value="";}
+
+async function safeDeleteFolder(id,onSuccess){var data=await api("/api/folders/"+id+"/count");var count=data.count||0;var folder=state.folders.find(function(f){return f.id===id;});var name=folder?folder.name:"this folder";var msg=count>0?'Delete "'+name+'"?\n\n'+count+' asset'+(count!==1?'s':'')+' and all their files will be permanently deleted. This cannot be undone.':'Delete "'+name+'"?';if(!confirm(msg))return;await api("/api/folders/"+id,{method:"DELETE"});if(onSuccess)onSuccess();}
+async function deleteF(id){await safeDeleteFolder(id,async function(){if(state.folderId===id)state.folderId=state.projectId;await loadFolders();loadAssets(state.folderId);});}
+async function renameF(id){var f=state.folders.find(function(x){return x.id===id;});var name=prompt("Rename:",f?f.name:"");if(!name||name===(f&&f.name))return;await api("/api/folders/"+id,{method:"PUT",body:JSON.stringify({name:name})});await loadFolders();renderSidebar();renderBreadcrumb();}
+async function deleteAssetCard(id){var a=state.assets.find(function(x){return x.id===id;});if(!confirm('Delete "'+(a?a.base_name:"this asset")+'"? Cannot be undone.'))return;await api("/api/assets/"+id,{method:"DELETE"});loadAssets(state.folderId);}
+
+function moveAsset(assetId){moveAssetId=assetId;var asset=state.assets.find(function(a){return a.id===assetId;});var list=document.getElementById("move-list");var html='';function addOpt(folder,depth){var isCur=asset&&asset.folder_id===folder.id;html+='<div class="move-opt'+(isCur?" cur":"")+'" style="padding-left:'+(14+depth*16)+'px" onclick="submitMove('+assetId+','+folder.id+')">📁 '+folder.name+'</div>';state.folders.filter(function(f){return f.parent_id===folder.id;}).forEach(function(c){addOpt(c,depth+1);});}state.folders.filter(function(f){return!f.parent_id;}).forEach(function(f){addOpt(f,0);});list.innerHTML=html;document.getElementById("move-modal").style.display="block";}
+function closeMoveModal(){document.getElementById("move-modal").style.display="none";moveAssetId=null;}
+async function submitMove(assetId,folderId){await fetch("/api/assets/"+assetId,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({folder_id:folderId})});closeMoveModal();loadAssets(state.folderId);}
+
+function showCtx(e,id){e.preventDefault();e.stopPropagation();ctxId=id;var asset=state.assets.find(function(a){return a.id===id;});var rptItem=document.querySelector("#ctx-menu .ctx-item:first-child");rptItem.style.display=(asset&&asset.ace_score===null)?"block":"none";var m=document.getElementById("ctx-menu");m.style.display="block";m.style.left=e.clientX+"px";m.style.top=e.clientY+"px";var r=m.getBoundingClientRect();if(r.right>window.innerWidth)m.style.left=(e.clientX-r.width)+"px";if(r.bottom>window.innerHeight)m.style.top=(e.clientY-r.height)+"px";}
+function hideCtx(){document.getElementById("ctx-menu").style.display="none";ctxId=null;}
+
+function showProjCtx(e,id){projCtxId=id;var m=document.getElementById("proj-ctx-menu");m.style.display="block";m.style.left=e.clientX+"px";m.style.top=e.clientY+"px";var r=m.getBoundingClientRect();if(r.right>window.innerWidth)m.style.left=(e.clientX-r.width)+"px";if(r.bottom>window.innerHeight)m.style.top=(e.clientY-r.height)+"px";}
+function hideProjCtx(){document.getElementById("proj-ctx-menu").style.display="none";projCtxId=null;}
+async function renameProjCtx(){if(!projCtxId)return;var f=state.folders.find(function(x){return x.id===projCtxId;});var name=prompt("Rename project:",f?f.name:"");if(!name||name===(f&&f.name))return;await api("/api/folders/"+projCtxId,{method:"PUT",body:JSON.stringify({name:name})});await loadFolders();renderHome();}
+async function deleteProjCtx(){if(!projCtxId)return;var id=projCtxId;hideProjCtx();await safeDeleteFolder(id,async function(){await loadFolders();renderHome();});}
+
+var folderCtxId=null;
+function showFolderCtx(e,id){e.preventDefault();e.stopPropagation();folderCtxId=id;var m=document.getElementById("folder-ctx-menu");m.style.display="block";m.style.left=e.clientX+"px";m.style.top=e.clientY+"px";var r=m.getBoundingClientRect();if(r.right>window.innerWidth)m.style.left=(e.clientX-r.width)+"px";if(r.bottom>window.innerHeight)m.style.top=(e.clientY-r.height)+"px";}
+function hideFolderCtx(){document.getElementById("folder-ctx-menu").style.display="none";folderCtxId=null;}
+async function folderCtxRename(){if(!folderCtxId)return;var f=state.folders.find(function(x){return x.id===folderCtxId;});var name=prompt("Rename:",f?f.name:"");if(!name||name===(f&&f.name))return;await api("/api/folders/"+folderCtxId,{method:"PUT",body:JSON.stringify({name:name})});await loadFolders();renderSidebar();renderGrid();renderBreadcrumb();}
+async function folderCtxDelete(){if(!folderCtxId)return;var id=folderCtxId;hideFolderCtx();await safeDeleteFolder(id,async function(){if(state.folderId===id)state.folderId=state.projectId;await loadFolders();renderSidebar();renderGrid();});}
+
+document.addEventListener("click",function(e){if(!e.target.closest("#ctx-menu"))hideCtx();if(!e.target.closest("#proj-ctx-menu"))hideProjCtx();if(!e.target.closest("#folder-ctx-menu"))hideFolderCtx();if(!e.target.closest("#tag-suggestions"))hideSuggestions();});
+
+async function openAsset(id){var versions=await api("/api/versions/"+id);if(!versions.length)return;var asset=state.assets.find(function(a){return a.id===id;});state.currentAsset={id:id,versions:versions,asset:asset};renderDetail(asset,versions[0]);document.getElementById("grid-view").style.display="none";document.getElementById("detail-view").style.display="flex";}
+
+function closeDetail(){pauseVideo();document.getElementById("detail-view").style.display="none";document.getElementById("grid-view").style.display="block";}
+
+function renderDetail(asset,version){
+  var info={};try{if(version.asset_info)info=JSON.parse(version.asset_info);}catch(e){}
+  var displayName=asset.display_name||asset.base_name;
+  document.getElementById("detail-name").textContent=displayName;
+  var sub=document.getElementById("detail-subname");
+  if(asset.display_name&&asset.display_name!==asset.base_name){sub.textContent=asset.base_name;sub.style.display="block";}else{sub.style.display="none";}
+  var sel=document.getElementById("version-select");
+  sel.innerHTML=state.currentAsset.versions.map(function(v){return'<option value="'+v.id+'"'+(v.id===version.id?" selected":"")+'>v'+v.version_number+(v.is_latest?" (latest)":"")+'</option>';}).join("");
+  var player=document.getElementById("video-player");
+  player.src=version.video_filename?"/uploads/videos/"+version.video_filename:"";player.load();
+  var tags=[];if(info.brand)tags.push("🏷️ "+info.brand);if(info.platform)tags.push("📱 "+info.platform);if(info.company)tags.push("🏢 "+info.company);if(info.date)tags.push("📅 "+info.date);
+  var mb=document.getElementById("detail-meta");mb.innerHTML=tags.map(function(t){return'<span class="meta-tag">'+t+'</span>';}).join("");mb.style.display=tags.length?"flex":"none";
+  var btn=document.getElementById("add-report-btn");
+  if(!btn){btn=document.createElement("button");btn.id="add-report-btn";btn.className="btn btn-ghost";btn.style.fontSize="12px";document.querySelector(".detail-hdr").appendChild(btn);}
+  btn.textContent=version.kpi_data?"📊 Replace Report":"📊 Add Report";
+  btn.onclick=function(){showReportModal(version.id,version.video_filename);};
+  renderScores(version);
+}
+
+async function switchVersion(versionId){var v=state.currentAsset.versions.find(function(x){return x.id===parseInt(versionId);});if(v)renderDetail(state.currentAsset.asset,v);}
+
+function renderScores(version){var el=document.getElementById("scores-content");if(!version.kpi_data||!version.ace_score){el.innerHTML='<div class="no-score">No Brainsuite report paired<br>with this version</div>';return;}var cats;try{cats=JSON.parse(version.kpi_data);}catch(e){el.innerHTML='<div class="no-score">Could not read score data</div>';return;}var ace=version.ace_score,ac=ace>=67?"ace-green":ace>=34?"ace-amber":"ace-red",as=ace>=67?"Green":ace>=34?"Amber":"Red";var html='<div class="ace-display '+ac+'"><div class="ace-num">'+ace+'</div><div class="ace-lbl">ACE Score</div><div class="ace-stat">'+as+'</div></div><div class="cats">';Object.keys(cats).forEach(function(key){var cat=cats[key],sum=cat.kpis.reduce(function(a,k){return a+colorValues[k.original];},0),score=Math.round(sum/cat.kpis.length);var sc=score>=67?"cg":score>=34?"ca":"cr";html+='<div class="cat-sec"><div class="cat-hdr" onclick="toggleCat(\''+key+'\')"><span class="cat-nm">'+cat.name+'</span><span class="cat-wt">×'+cat.weight+'</span><span class="cat-sc '+sc+'">'+score+'</span><span class="cat-chv" id="chev-'+key+'">▼</span></div><div class="cat-kpis" id="kpis-'+key+'" style="display:none">';cat.kpis.forEach(function(kpi){var bc=kpi.original==="green"?"kg":kpi.original==="amber"?"kam":"kred";html+='<div class="kpi-row"><span class="kpi-nm">'+kpi.name+'</span><span class="kpi-badge '+bc+'">'+kpi.value+'</span></div>';});html+='</div></div>';});el.innerHTML=html+'</div>';}
+function toggleCat(key){var el=document.getElementById("kpis-"+key),chev=document.getElementById("chev-"+key),open=el.style.display==="none";el.style.display=open?"block":"none";chev.className="cat-chv"+(open?" open":"");}
+
+function showUpload(){if(!state.projectId){alert("Please open a project first.");return;}uploadFiles={video:null,pptx:null};document.getElementById("video-fname").textContent="";document.getElementById("pptx-fname").textContent="";document.getElementById("upstatus").style.display="none";document.getElementById("upload-submit").disabled=false;document.getElementById("upload-modal").style.display="block";}
 function closeUpload(){document.getElementById("upload-modal").style.display="none";}
 document.getElementById("modal-overlay").addEventListener("click",function(e){if(e.target===this)closeUpload();});
 document.getElementById("move-overlay").addEventListener("click",function(e){if(e.target===this)closeMoveModal();});
+document.getElementById("report-overlay").addEventListener("click",function(e){if(e.target===this)closeReportModal();});
+document.getElementById("tag-overlay").addEventListener("click",function(e){if(e.target===this)submitTags(true);});
 function filePicked(type,input){if(!input.files[0])return;uploadFiles[type]=input.files[0];document.getElementById(type+"-fname").textContent="✓ "+input.files[0].name;}
 function dzOver(e,id){e.preventDefault();document.getElementById(id).classList.add("over");}
 function dzOut(id){document.getElementById(id).classList.remove("over");}
-function dzDrop(e,type){
-  e.preventDefault();dzOut(type+"-dz");
-  var f=e.dataTransfer.files[0];if(!f)return;
-  var ok=type==="video"?/\.(mp4|mov|avi|webm|mkv)$/i.test(f.name):/\.pptx$/i.test(f.name);
-  if(!ok){setStatus("Wrong file type for "+type,"error");return;}
-  uploadFiles[type]=f;document.getElementById(type+"-fname").textContent="✓ "+f.name;
-}
+function dzDrop(e,type){e.preventDefault();dzOut(type+"-dz");var f=e.dataTransfer.files[0];if(!f)return;var ok=type==="video"?/\.(mp4|mov|avi|webm|mkv)$/i.test(f.name):/\.pptx$/i.test(f.name);if(!ok){setStatus("Wrong file type for "+type,"error");return;}uploadFiles[type]=f;document.getElementById(type+"-fname").textContent="✓ "+f.name;}
 function setStatus(msg,type){var el=document.getElementById("upstatus");el.style.display="block";el.className="upstatus "+type;el.textContent=msg;}
+
 async function submitUpload(){
   if(!uploadFiles.video){setStatus("Please select a video file","error");return;}
   document.getElementById("upload-submit").disabled=true;
   setStatus("Processing...","info");
-  if (uploadFiles.pptx && !checkPair(uploadFiles.video.name, uploadFiles.pptx.name)) {
-if (!confirm('This report may not belong to this video.\n\nVideo: ' + uploadFiles.video.name + '\nReport: ' + uploadFiles.pptx.name + '\n\nPair them anyway?')) {
-  document.getElementById("upload-submit").disabled = false;
-  setStatus("Upload cancelled.", "error");
-  return;
-}
-}
+  if(uploadFiles.pptx&&!checkPair(uploadFiles.video.name,uploadFiles.pptx.name)){if(!confirm('This report may not belong to this video.\n\nVideo: '+uploadFiles.video.name+'\nReport: '+uploadFiles.pptx.name+'\n\nPair them anyway?')){document.getElementById("upload-submit").disabled=false;setStatus("Upload cancelled.","error");return;}}
   var scoresJson=null,assetInfoJson=null,thumbnail=null,aceScore=null;
-  if(uploadFiles.pptx){
-    try{
-      setStatus("Parsing Brainsuite report...","info");
-      var parsed=await parsePPTX(uploadFiles.pptx);
-      aceScore=calcACE(parsed.categories);scoresJson=JSON.stringify(parsed.categories);
-      assetInfoJson=JSON.stringify(parsed.assetInfo);thumbnail=parsed.assetInfo.thumbnail||null;
-    }catch(err){console.error(err);setStatus("Could not parse PPTX — uploading video only","info");}
-  }
+  if(uploadFiles.pptx){try{setStatus("Parsing Brainsuite report...","info");var parsed=await parsePPTX(uploadFiles.pptx);aceScore=calcACE(parsed.categories);scoresJson=JSON.stringify(parsed.categories);assetInfoJson=JSON.stringify(parsed.assetInfo);thumbnail=parsed.assetInfo.thumbnail||null;}catch(err){console.error(err);setStatus("Could not parse PPTX — uploading video only","info");}}
   if(!thumbnail&&uploadFiles.video){setStatus("Generating thumbnail...","info");thumbnail=await generateVideoThumbnail(uploadFiles.video);}
   setStatus("Uploading...","info");
   var form=new FormData();
@@ -731,288 +582,144 @@ if (!confirm('This report may not belong to this video.\n\nVideo: ' + uploadFile
   try{
     var res=await fetch("/api/upload",{method:"POST",body:form});
     var data=await res.json();
-    if(data.ok){setStatus("Uploaded! v"+data.version,"success");setTimeout(function(){closeUpload();loadAssets(state.folderId);},1200);}
-    else{setStatus("Error: "+(data.error||"Upload failed"),"error");document.getElementById("upload-submit").disabled=false;}
+    if(data.ok){
+      if(data.version===1){
+        var bName=uploadFiles.video.name.replace(/\.[^/.]+$/,"");
+        var vUrl=URL.createObjectURL(uploadFiles.video);
+        closeUpload();
+        showTagModal(data.asset_id,vUrl,bName,state.projectId);
+      } else {
+        setStatus("Uploaded! v"+data.version,"success");
+        setTimeout(function(){closeUpload();loadAssets(state.folderId);},1200);
+      }
+    } else {setStatus("Error: "+(data.error||"Upload failed"),"error");document.getElementById("upload-submit").disabled=false;}
   }catch(err){setStatus("Error: "+err.message,"error");document.getElementById("upload-submit").disabled=false;}
 }
 
-// ── Drag & Drop ───────────────────────────────────────────────────────────────
-function cardDragStart(e,id){
-  state.draggingAssetId=id;e.dataTransfer.setData("assetId",id);e.dataTransfer.effectAllowed="move";
-  var card=e.currentTarget,clone=card.cloneNode(true);
-  clone.querySelectorAll("video").forEach(function(v){v.remove();});
-  clone.style.transform="none";clone.style.width=card.offsetWidth+"px";
-  clone.style.position="absolute";clone.style.top="-9999px";clone.style.opacity="0.85";
-  document.body.appendChild(clone);e.dataTransfer.setDragImage(clone,e.offsetX,e.offsetY);
-  setTimeout(function(){document.body.removeChild(clone);},0);
+var reportVersionId=null,reportFile=null,reportVideoName=null;
+function showReportModal(versionId,videoFilename){reportVersionId=versionId;reportVideoName=videoFilename||null;reportFile=null;document.getElementById("report-fname").textContent="";document.getElementById("report-status").style.display="none";document.getElementById("report-submit").disabled=false;document.getElementById("report-modal").style.display="block";}
+function closeReportModal(){document.getElementById("report-modal").style.display="none";reportVersionId=null;reportFile=null;}
+function reportPicked(input){if(!input.files[0])return;reportFile=input.files[0];document.getElementById("report-fname").textContent="✓ "+input.files[0].name;}
+function reportDrop(e){e.preventDefault();dzOut("report-dz");var f=e.dataTransfer.files[0];if(!f||!/\.pptx$/i.test(f.name)){setRptStatus("Please drop a PPTX file","error");return;}reportFile=f;document.getElementById("report-fname").textContent="✓ "+f.name;}
+function setRptStatus(msg,type){var el=document.getElementById("report-status");el.style.display="block";el.className="upstatus "+type;el.textContent=msg;}
+async function submitReport(){
+  if(!reportFile){setRptStatus("Please select a PPTX file","error");return;}
+  if(reportVideoName&&!checkPair(reportVideoName,reportFile.name)){if(!confirm('This report may not belong to this video.\n\nVideo: '+reportVideoName+'\nReport: '+reportFile.name+'\n\nPair them anyway?'))return;}
+  document.getElementById("report-submit").disabled=true;setRptStatus("Parsing report...","info");
+  try{var parsed=await parsePPTX(reportFile);var aceScore=calcACE(parsed.categories);setRptStatus("Uploading...","info");var form=new FormData();form.append("pptx",reportFile);form.append("scores",JSON.stringify(parsed.categories));form.append("asset_info",JSON.stringify(parsed.assetInfo));form.append("ace_score",aceScore);if(parsed.assetInfo.thumbnail)form.append("thumbnail",parsed.assetInfo.thumbnail);var res=await fetch("/api/versions/"+reportVersionId+"/report",{method:"POST",body:form});var data=await res.json();if(data.ok){setRptStatus("Report added!","success");setTimeout(function(){closeReportModal();loadAssets(state.folderId);if(document.getElementById("detail-view").style.display!=="none"&&state.currentAsset)openAsset(state.currentAsset.id);},1000);}else{setRptStatus("Error: "+(data.error||"Failed"),"error");document.getElementById("report-submit").disabled=false;}}catch(err){setRptStatus("Error: "+err.message,"error");document.getElementById("report-submit").disabled=false;}
 }
+function addReportFromCtx(){var asset=state.assets.find(function(a){return a.id===ctxId;});if(!asset||!asset.latest_version_id)return;showReportModal(asset.latest_version_id,asset.video_filename);}
+
+function showTagModal(assetId, videoUrl, baseName, projectId) {
+  tagState.assetId=assetId; tagState.videoUrl=videoUrl; tagState.baseName=baseName; tagState.projectId=projectId;
+  tagState.phase=null; tagState.platform=null; tagState.format=null; tagState.isMaster=false; tagState.audienceTags=[]; tagState.suggestions=[];
+  var ctx=getFolderContext(state.folderId,projectId);
+  if(ctx.phase) tagState.phase=ctx.phase;
+  if(ctx.platform) tagState.platform=ctx.platform;
+  if(ctx.format) tagState.format=ctx.format;
+  var vid=document.getElementById("tag-video");
+  vid.src=videoUrl; vid.load(); vid.play().catch(function(){});
+  document.getElementById("tag-display-name").value=baseName;
+  document.getElementById("tag-master").checked=false;
+  api("/api/tags?project_id="+projectId).then(function(tags){tagState.suggestions=tags||[];});
+  renderTagPills();
+  renderAudienceTags();
+  validateTagForm();
+  document.getElementById("tag-modal").style.display="block";
+}
+
+function closeTagModal() {
+  var vid=document.getElementById("tag-video");
+  if(vid.src.startsWith("blob:"))URL.revokeObjectURL(vid.src);
+  vid.pause(); vid.src="";
+  document.getElementById("tag-modal").style.display="none";
+  loadFolders().then(function(){loadAssets(state.folderId);});
+}
+
+function getFolderContext(folderId,projectId){
+  if(!folderId||folderId===projectId)return{};
+  var f=state.folders.find(function(x){return x.id===folderId;});if(!f)return{};
+  if(f.parent_id===projectId)return{phase:f.name};
+  var p=state.folders.find(function(x){return x.id===f.parent_id;});if(!p)return{phase:f.name};
+  if(p.parent_id===projectId)return{phase:p.name,platform:f.name};
+  var g=state.folders.find(function(x){return x.id===p.parent_id;});
+  if(g&&g.parent_id===projectId)return{phase:g.name,platform:p.name,format:f.name};
+  return{};
+}
+
+function renderTagPills(){
+  document.getElementById("tag-phases").innerHTML=PHASES.map(function(p){return'<button class="pill'+(tagState.phase===p?" active":"")+'" onclick="selectTag(\'phase\',\''+p+'\')">'+p+'</button>';}).join("");
+  document.getElementById("tag-platforms").innerHTML=PLATFORMS.map(function(p){return'<button class="pill'+(tagState.platform===p?" active":"")+'" onclick="selectTag(\'platform\',\''+p+'\')">'+p+'</button>';}).join("");
+  document.getElementById("tag-formats").innerHTML=FORMATS.map(function(f){return'<button class="pill'+(tagState.format===f?" active":"")+'" onclick="selectTag(\'format\',\''+f+'\')">'+f+'</button>';}).join("");
+  validateTagForm();
+}
+
+function selectTag(field,val){tagState[field]=tagState[field]===val?null:val;renderTagPills();}
+
+function renderAudienceTags(){
+  var wrap=document.getElementById("tag-input-wrap");
+  wrap.querySelectorAll(".tag-pill").forEach(function(p){p.remove();});
+  var input=document.getElementById("tag-text-input");
+  tagState.audienceTags.forEach(function(tag){var pill=document.createElement("span");pill.className="tag-pill";pill.innerHTML=tag+'<span class="tag-pill-x" onclick="removeAudienceTag(\''+tag+'\')">×</span>';wrap.insertBefore(pill,input);});
+}
+
+function addAudienceTag(tag){tag=tag.trim();if(!tag||tagState.audienceTags.indexOf(tag)!==-1)return;tagState.audienceTags.push(tag);document.getElementById("tag-text-input").value="";hideSuggestions();renderAudienceTags();}
+function removeAudienceTag(tag){tagState.audienceTags=tagState.audienceTags.filter(function(t){return t!==tag;});renderAudienceTags();}
+
+function handleTagKeydown(e){
+  if(e.key==="Enter"||e.key===","){e.preventDefault();var val=document.getElementById("tag-text-input").value.trim().replace(",","");if(val)addAudienceTag(val);}
+  if(e.key==="Escape")hideSuggestions();
+  if(e.key==="Backspace"&&!document.getElementById("tag-text-input").value&&tagState.audienceTags.length)removeAudienceTag(tagState.audienceTags[tagState.audienceTags.length-1]);
+}
+
+function handleTagInput(e){
+  var val=e.target.value.toLowerCase().trim();if(!val){hideSuggestions();return;}
+  var matches=tagState.suggestions.filter(function(s){return s.toLowerCase().includes(val)&&tagState.audienceTags.indexOf(s)===-1;});
+  if(!matches.length){hideSuggestions();return;}
+  var box=document.getElementById("tag-suggestions");
+  box.innerHTML=matches.map(function(t){return'<div class="tag-suggestion-item" onmousedown="addAudienceTag(\''+t+'\')">'+t+'</div>';}).join("");
+  box.style.display="block";
+}
+
+function hideSuggestions(){document.getElementById("tag-suggestions").style.display="none";}
+
+function validateTagForm(){document.getElementById("tag-confirm").disabled=!(tagState.phase&&tagState.platform);}
+
+async function submitTags(skip){
+  if(skip){closeTagModal();return;}
+  var displayName=document.getElementById("tag-display-name").value.trim();
+  var payload={display_name:displayName!==tagState.baseName?displayName:null,phase:tagState.phase,platform:tagState.platform,format:tagState.format||null,is_master:tagState.isMaster?1:0,audience_tags:tagState.audienceTags,project_id:tagState.projectId};
+  var res=await api("/api/assets/"+tagState.assetId+"/tags",{method:"PUT",body:JSON.stringify(payload)});
+  if(res.ok)closeTagModal();
+}
+
+window.addEventListener("dragenter",function(e){if(state.draggingAssetId)return;if(document.getElementById("upload-modal").style.display==="block"||document.getElementById("move-modal").style.display==="block"||document.getElementById("report-modal").style.display==="block"||document.getElementById("tag-modal").style.display==="block")return;if(!e.dataTransfer||!Array.from(e.dataTransfer.types||[]).includes("Files"))return;dragCounter++;if(dragCounter===1)document.getElementById("drag-overlay").classList.add("active");});
+window.addEventListener("dragleave",function(){if(state.draggingAssetId)return;dragCounter--;if(dragCounter<=0){dragCounter=0;document.getElementById("drag-overlay").classList.remove("active");}});
+window.addEventListener("dragover",function(e){e.preventDefault();});
+window.addEventListener("drop",function(e){e.preventDefault();dragCounter=0;document.getElementById("drag-overlay").classList.remove("active");if(state.draggingAssetId)return;if(document.getElementById("upload-modal").style.display==="block")return;if(document.getElementById("report-modal").style.display==="block")return;if(document.getElementById("tag-modal").style.display==="block")return;if(!state.projectId)return;var files=Array.from(e.dataTransfer.files);var video=files.find(function(f){return /\.(mp4|mov|avi|webm|mkv)$/i.test(f.name);});var pptx=files.find(function(f){return /\.pptx$/i.test(f.name);});if(!video&&!pptx)return;showUpload();if(video){uploadFiles.video=video;document.getElementById("video-fname").textContent="✓ "+video.name;}if(pptx){uploadFiles.pptx=pptx;document.getElementById("pptx-fname").textContent="✓ "+pptx.name;}});
+
+function cardDragStart(e,id){state.draggingAssetId=id;e.dataTransfer.setData("assetId",id);e.dataTransfer.effectAllowed="move";var card=e.currentTarget,clone=card.cloneNode(true);clone.querySelectorAll("video").forEach(function(v){v.remove();});clone.style.transform="none";clone.style.width=card.offsetWidth+"px";clone.style.position="absolute";clone.style.top="-9999px";clone.style.opacity="0.85";document.body.appendChild(clone);e.dataTransfer.setDragImage(clone,e.offsetX,e.offsetY);setTimeout(function(){document.body.removeChild(clone);},0);}
 function cardDragEnd(){state.draggingAssetId=null;}
 function folderDragOver(e,el){if(!state.draggingAssetId)return;e.preventDefault();el.style.outline="3px solid #6366f1";}
 function folderDragLeave(el){el.style.outline="";}
-async function folderDrop(e,folderId){
-  e.preventDefault();folderDragLeave(e.currentTarget);
-  if(!state.draggingAssetId)return;
-  await submitMove(state.draggingAssetId,folderId);state.draggingAssetId=null;
-}
-window.addEventListener("dragenter", function(e) {
-if (state.draggingAssetId) return;
-if (document.getElementById("upload-modal").style.display==="block"
-  || document.getElementById("move-modal").style.display==="block"
-  || document.getElementById("report-modal").style.display==="block") return;
-if (!e.dataTransfer || !Array.from(e.dataTransfer.types||[]).includes("Files")) return;
-dragCounter++; if(dragCounter===1) document.getElementById("drag-overlay").classList.add("active");
-});
-window.addEventListener("dragleave", function() {
-if (state.draggingAssetId) return;
-if (document.getElementById("report-modal").style.display==="block") return;
-dragCounter--; if(dragCounter<=0){dragCounter=0;document.getElementById("drag-overlay").classList.remove("active");}
-});
-window.addEventListener("dragover",function(e){e.preventDefault();});
-window.addEventListener("drop", function(e) {
-e.preventDefault(); dragCounter=0; document.getElementById("drag-overlay").classList.remove("active");
-if (state.draggingAssetId) return;
-if (document.getElementById("upload-modal").style.display==="block") return;
-if (document.getElementById("report-modal").style.display==="block") return;
-if (!state.projectId) return;
-  var files=Array.from(e.dataTransfer.files);
-  var video=files.find(function(f){return /\.(mp4|mov|avi|webm|mkv)$/i.test(f.name);});
-  var pptx=files.find(function(f){return /\.pptx$/i.test(f.name);});
-  if(!video&&!pptx)return;
-  showUpload();
-  if(video){uploadFiles.video=video;document.getElementById("video-fname").textContent="✓ "+video.name;}
-  if(pptx){uploadFiles.pptx=pptx;document.getElementById("pptx-fname").textContent="✓ "+pptx.name;}
-});
+async function folderDrop(e,folderId){e.preventDefault();folderDragLeave(e.currentTarget);if(!state.draggingAssetId)return;await submitMove(state.draggingAssetId,folderId);state.draggingAssetId=null;}
 
-document.addEventListener("keydown", function(e){
-if(e.key==="Escape"){
-  if(document.getElementById("detail-view").style.display!=="none"){closeDetail();return;}
-  closeUpload(); closeMoveModal(); hideCtx(); hideProjCtx(); hideFolderCtx();
-}
-});
+function initCardPreview(card){var src=card.dataset.video;if(!src)return;var thumb=card.querySelector(".cthumb");var video=document.createElement("video");video.muted=true;video.playsInline=true;video.preload="none";video.style.cssText="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;opacity:0;transition:opacity 0.15s;pointer-events:none;";thumb.appendChild(video);var loaded=false;card.addEventListener("mouseenter",function(){if(!loaded){video.src="/uploads/videos/"+src;video.load();loaded=true;}var bg=thumb.querySelector("img,.cph");if(bg)bg.style.opacity="0";video.style.opacity="1";});card.addEventListener("mousemove",function(e){if(!video.duration)return;var rect=thumb.getBoundingClientRect();video.currentTime=Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width))*video.duration;});card.addEventListener("mouseleave",function(){video.style.opacity="0";video.pause();var bg=thumb.querySelector("img,.cph");if(bg)bg.style.opacity="1";});card.addEventListener("dragstart",function(){video.style.opacity="0";var bg=thumb.querySelector("img,.cph");if(bg)bg.style.opacity="1";});}
 
-// ── Card Preview ──────────────────────────────────────────────────────────────
-function initCardPreview(card){
-  var src=card.dataset.video;if(!src)return;
-  var thumb=card.querySelector(".cthumb");
-  var video=document.createElement("video");
-  video.muted=true;video.playsInline=true;video.preload="none";
-  video.style.cssText="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;opacity:0;transition:opacity 0.15s;pointer-events:none;";
-  thumb.appendChild(video);
-  var loaded=false;
-  card.addEventListener("mouseenter",function(){
-    if(!loaded){video.src="/uploads/videos/"+src;video.load();loaded=true;}
-    var bg=thumb.querySelector("img,.cph");if(bg)bg.style.opacity="0";
-    video.style.opacity="1";
-  });
-  card.addEventListener("mousemove",function(e){
-    if(!video.duration)return;
-    var rect=thumb.getBoundingClientRect();
-    video.currentTime=Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width))*video.duration;
-  });
-  card.addEventListener("mouseleave",function(){
-    video.style.opacity="0";video.pause();
-    var bg=thumb.querySelector("img,.cph");if(bg)bg.style.opacity="1";
-  });
-  card.addEventListener("dragstart",function(){
-    video.style.opacity="0";var bg=thumb.querySelector("img,.cph");if(bg)bg.style.opacity="1";
-  });
-}
+document.addEventListener("keydown",function(e){if(e.key==="Escape"){if(document.getElementById("detail-view").style.display!=="none"){closeDetail();return;}closeUpload();closeMoveModal();closeReportModal();hideCtx();hideProjCtx();hideFolderCtx();}});
 
-// ── BrainSurgeon Parser ───────────────────────────────────────────────────────
-async function generateVideoThumbnail(file){
-  return new Promise(function(resolve){
-    var video=document.createElement("video"),url=URL.createObjectURL(file),captured=false;
-    video.muted=true;video.playsInline=true;
-    function capture(){
-      if(captured)return;captured=true;
-      try{
-        var c=document.createElement("canvas");c.width=320;c.height=Math.round(320*video.videoHeight/video.videoWidth)||180;
-        c.getContext("2d").drawImage(video,0,0,c.width,c.height);URL.revokeObjectURL(url);resolve(c.toDataURL("image/jpeg",0.7));
-      }catch(e){URL.revokeObjectURL(url);resolve(null);}
-    }
-    video.addEventListener("seeked",capture);
-    video.addEventListener("loadeddata",function(){video.currentTime=video.duration>0?Math.min(2,video.duration*0.2):0;});
-    video.onerror=function(){URL.revokeObjectURL(url);resolve(null);};
-    video.src=url;video.load();
-  });
-}
+function checkPair(videoName,pptxName){var vNorm=videoName.toLowerCase().replace(/[^a-z0-9]/g,"");var pNorm=pptxName.toLowerCase().replace(/[^a-z0-9]/g,"");if(pNorm.includes(vNorm))return true;var pCore=pptxName.toLowerCase().replace(/^ace[^_]*_/,"").replace(/_?\d{8}\.pptx$/,"").replace(/^[a-z]+_/,"").replace(/[^a-z0-9]/g,"");return pCore.length>4&&vNorm.includes(pCore);}
+
+async function generateVideoThumbnail(file){return new Promise(function(resolve){var video=document.createElement("video"),url=URL.createObjectURL(file),captured=false;video.muted=true;video.playsInline=true;function capture(){if(captured)return;captured=true;try{var c=document.createElement("canvas");c.width=320;c.height=Math.round(320*video.videoHeight/video.videoWidth)||180;c.getContext("2d").drawImage(video,0,0,c.width,c.height);URL.revokeObjectURL(url);resolve(c.toDataURL("image/jpeg",0.7));}catch(e){URL.revokeObjectURL(url);resolve(null);}}video.addEventListener("seeked",capture);video.addEventListener("loadeddata",function(){video.currentTime=video.duration>0?Math.min(2,video.duration*0.2):0;});video.onerror=function(){URL.revokeObjectURL(url);resolve(null);};video.src=url;video.load();});}
+
 function calcACE(cats){var tw=0,ws=0;Object.keys(cats).forEach(function(k){var sum=cats[k].kpis.reduce(function(a,kpi){return a+colorValues[kpi.original];},0);ws+=(sum/cats[k].kpis.length)*cats[k].weight;tw+=cats[k].weight;});return Math.round(ws/tw);}
 function mkCats(){return JSON.parse(JSON.stringify({attention:{name:"Attention",weight:3,kpis:[{id:"att_1",name:"Engaging Beginning",type:"binary",original:"green",value:"✓",thresholds:null,hasAmber:false},{id:"att_2",name:"Scene Pace",type:"binary",original:"green",value:"✓",thresholds:null,hasAmber:false},{id:"att_3",name:"Scene Motion",type:"numeric",original:"green",value:75,thresholds:{red:33,amber:50},hasAmber:true}]},branding:{name:"Branding",weight:5,kpis:[{id:"bra_1",name:"Brand Cut-Through",type:"numeric",original:"red",value:19,thresholds:{red:25,amber:50},hasAmber:true},{id:"bra_2",name:"Brand CT First Seconds",type:"binary",original:"green",value:"✓",thresholds:null,hasAmber:false},{id:"bra_3",name:"Product Attention Over Time",type:"numeric",original:"red",value:0,thresholds:{red:5,amber:27},hasAmber:true},{id:"bra_4",name:"Product CT First Seconds",type:"binary",original:"red",value:"✗",thresholds:null,hasAmber:false}]},processing:{name:"Processing",weight:1,kpis:[{id:"pro_1",name:"Ad Recall Potential",type:"numeric",original:"green",value:94,thresholds:{red:33,amber:50},hasAmber:true},{id:"pro_2",name:"Visual Simplicity",type:"numeric",original:"green",value:81,thresholds:{red:33,amber:50},hasAmber:true},{id:"pro_3",name:"Ideal Aspect Ratio",type:"binary",original:"green",value:"✓",thresholds:null,hasAmber:false},{id:"pro_4",name:"Enough Time to Read",type:"numeric",original:"red",value:8,thresholds:{red:33,amber:50},hasAmber:true},{id:"pro_5",name:"Ideal Sound Setting",type:"binary",original:"green",value:"✓",thresholds:null,hasAmber:false}]},emotional:{name:"Emotional",weight:1,kpis:[{id:"emo_1",name:"Human Element",type:"numeric",original:"green",value:81,thresholds:{red:30,amber:70},hasAmber:true},{id:"emo_2",name:"Activation: Visual",type:"numeric",original:"green",value:81,thresholds:{red:33,amber:50},hasAmber:true},{id:"emo_3",name:"Activation: Text",type:"numeric",original:"green",value:83,thresholds:{red:25,amber:40},hasAmber:true}]},persuasion:{name:"Persuasion",weight:1,kpis:[{id:"per_1",name:"CTA Cut-Through",type:"binary",original:"red",value:"✗",thresholds:null,hasAmber:false},{id:"per_2",name:"Engagement Potential",type:"numeric",original:"amber",value:50,thresholds:{red:33,amber:50},hasAmber:true}]}}))}
 function exText(xml){var m=xml.match(/<a:t[^>]*>([^<]+)<\/a:t>/g);if(m)return m.map(function(x){return x.replace(/<[^>]+>/g,"");}).join(" ");return xml.replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim();}
 function exThresh(text){var p1=[/&lt;\s*(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)\s*&gt;\s*(\d+(?:\.\d+)?)/,/<\s*(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)\s*>\s*(\d+(?:\.\d+)?)/];for(var i=0;i<p1.length;i++){var m=text.match(p1[i]);if(m)return{red:parseFloat(m[1]),amber:parseFloat(m[3]),hasAmber:true};}var p2=[/&lt;\s*(\d+(?:\.\d+)?)\s*&gt;\s*(\d+(?:\.\d+)?)/,/<\s*(\d+(?:\.\d+)?)\s*>\s*(\d+(?:\.\d+)?)/];for(var j=0;j<p2.length;j++){var m2=text.match(p2[j]);if(m2)return{red:parseFloat(m2[1]),amber:null,hasAmber:false};}return null;}
 function detColor(val,t){if(!t)return val>0?"green":"red";if(t.hasAmber){if(val<t.red)return"red";if(val<=t.amber)return"amber";return"green";}return val>t.red?"green":"red";}
-async function parsePPTX(file){
-  var zip=await JSZip.loadAsync(file);
-  var thumbUrl,allText="",kpiOv="",slideTexts={},kpiData={},thresh={};
-  var tp=Object.keys(zip.files).find(function(p){return /ppt\/media\/image-4-1\.(png|jpg|jpeg)/i.test(p);});
-  if(tp){try{var d=await zip.file(tp).async("base64");var e=tp.split(".").pop().toLowerCase();thumbUrl="data:image/"+(e==="png"?"png":"jpeg")+";base64,"+d;}catch(e){}}
-  for(var path in zip.files){var mm=path.match(/ppt\/slides\/slide(\d+)\.xml/);if(mm){var content=await zip.file(path).async("string");var text=exText(content);slideTexts[mm[1]]=text;allText+=" "+text;if(/KPI Overview|Attention:.*Branding:.*Processing Ease:/i.test(text))kpiOv=text;}}
-  var nm=allText.match(/Asset Name:\s*([A-Za-z0-9_\s&;]+?)\s+Asset Stage/i);var assetName=nm?nm[1].trim():"Unknown";
-  var tsm=allText.match(/Date:\s*(\d{1,2}\/\d{1,2}\/\d{4},\s*\d{1,2}:\d{2}\s*[AP]M)/i);var assetDate=tsm?tsm[1]:null;
-  var company=(allText.match(/Which Company\?:\s*(\w+)/i)||[])[1]||null;
-  var brand=(allText.match(/Brand Name:\s*([^\n:]+?)(?=\s+(?:Voice-Over|Asset|File|Market|Date|Category))/i)||[])[1];if(brand)brand=brand.trim();
-  var pm=allText.match(/Scene pace is.*?(?:above|below) benchmark for\s+([A-Za-z0-9\s\-]+)/i);var platform=pm?pm[1].trim():null;
-  for(var sn in slideTexts){var st=slideTexts[sn];if(/KPI Overview/i.test(st))continue;if(/Scene Motion.*?motion score/i.test(st)&&!thresh.sm)thresh.sm=exThresh(st);if(/Brand Cut-Through\s+\d+.*?brand cut-through/i.test(st)&&!/First Seconds/i.test(st.substring(0,100))&&!thresh.bc)thresh.bc=exThresh(st);if(/Packaged Product Attention Over Time/i.test(st)&&!thresh.pt)thresh.pt=exThresh(st);if(/Ad Recall Potential.*?ad recall potential/i.test(st)&&!thresh.ar)thresh.ar=exThresh(st);if(/Visual Simplicity.*?visual simplicity/i.test(st)&&!thresh.vs)thresh.vs=exThresh(st);if(/Enough Time to Read.*?text on the screen/i.test(st)&&!thresh.rt)thresh.rt=exThresh(st);if(/Human Element.*?incorporates a person/i.test(st)&&!thresh.he)thresh.he=exThresh(st);if(/Activation Potential: Visual.*?of scenes, the visuals/i.test(st)&&!thresh.va)thresh.va=exThresh(st);if(/Activation Potential: Text.*?scenes with text/i.test(st)&&!thresh.ta)thresh.ta=exThresh(st);if(/Engagement Potential.*?engagement potential/i.test(st)&&!thresh.ep)thresh.ep=exThresh(st);}
-  function gv(rx){var m=kpiOv.match(rx);return m?parseInt(m[1]):undefined;}
-  kpiData.sm=gv(/(\d+)\s+Scene Motion/i);kpiData.bc=gv(/(\d+)\s+Brand Cut-Through(?!\s+in\s+First)/i);kpiData.pt=gv(/(\d+)\s+Packaged Product Attention Over Time/i);kpiData.ar=gv(/(\d+)\s+Ad Recall Potential/i);kpiData.vs=gv(/(\d+)\s+Visual Simplicity/i);kpiData.rt=gv(/(\d+)\s+Enough Time to Read/i);kpiData.he=gv(/(\d+)\s+Human Element/i);kpiData.va=gv(/(\d+)\s+Activation Potential:\s*Visual/i);kpiData.ta=gv(/(\d+)\s+Activation Potential:\s*Text/i);kpiData.ep=gv(/(\d+)\s+Engagement Potential/i);
-  var bin={eb:/Engaging Beginning.*?has enough movement/i.test(allText)&&!/has not enough movement/i.test(allText),sp:/Scene pace is.*?\d+\.?\d*\s+which is\s+above benchmark/i.test(allText),bf:/Brand Cut-Through in First Seconds.*?The brand attracts enough attention/i.test(allText),pf:/Packaged Product Cut-Through in First Seconds.*?The product attracts enough attention in the first \d+ seconds/i.test(allText),ar:/Ideal Aspect Ratio.*?The video respects the ideal aspect ratio/i.test(allText)&&!/does not respect/i.test(allText),so:/Ideal Sound Setting.*?The video respects the ideal audio settings/i.test(allText)&&!/does not respect/i.test(allText),ct:/Call-to-Action Cut-Through.*?Call-to-action cuts through above norm in none/i.test(allText)};
-  var cats=mkCats();
-  function applyT(kpi,t){if(t){kpi.thresholds=t;kpi.hasAmber=t.hasAmber;}}
-  applyT(cats.attention.kpis[2],thresh.sm);applyT(cats.branding.kpis[0],thresh.bc);applyT(cats.branding.kpis[2],thresh.pt);applyT(cats.processing.kpis[0],thresh.ar);applyT(cats.processing.kpis[1],thresh.vs);applyT(cats.processing.kpis[3],thresh.rt);applyT(cats.emotional.kpis[0],thresh.he);applyT(cats.emotional.kpis[1],thresh.va);applyT(cats.emotional.kpis[2],thresh.ta);applyT(cats.persuasion.kpis[1],thresh.ep);
-  function applyN(kpi,val){if(val!==undefined){kpi.value=val;kpi.original=detColor(val,kpi.thresholds);}}
-  applyN(cats.attention.kpis[2],kpiData.sm);applyN(cats.branding.kpis[0],kpiData.bc);applyN(cats.branding.kpis[2],kpiData.pt);applyN(cats.processing.kpis[0],kpiData.ar);applyN(cats.processing.kpis[1],kpiData.vs);applyN(cats.processing.kpis[3],kpiData.rt);applyN(cats.emotional.kpis[0],kpiData.he);applyN(cats.emotional.kpis[1],kpiData.va);applyN(cats.emotional.kpis[2],kpiData.ta);applyN(cats.persuasion.kpis[1],kpiData.ep);
-  function applyB(kpi,val){kpi.original=val?"green":"red";kpi.value=val?"✓":"✗";}
-  applyB(cats.attention.kpis[0],bin.eb);applyB(cats.attention.kpis[1],bin.sp);applyB(cats.branding.kpis[1],bin.bf);applyB(cats.branding.kpis[3],bin.pf);applyB(cats.processing.kpis[2],bin.ar);applyB(cats.processing.kpis[4],bin.so);
-  cats.persuasion.kpis[0].original=bin.ct?"red":"green";cats.persuasion.kpis[0].value=bin.ct?"✗":"✓";
-  return{categories:cats,assetInfo:{name:assetName,date:assetDate,company:company,brand:brand,platform:platform,thumbnail:thumbUrl}};
-}
+async function parsePPTX(file){var zip=await JSZip.loadAsync(file);var thumbUrl,allText="",kpiOv="",slideTexts={},kpiData={},thresh={};var tp=Object.keys(zip.files).find(function(p){return /ppt\/media\/image-4-1\.(png|jpg|jpeg)/i.test(p);});if(tp){try{var d=await zip.file(tp).async("base64");var e=tp.split(".").pop().toLowerCase();thumbUrl="data:image/"+(e==="png"?"png":"jpeg")+";base64,"+d;}catch(e){}}for(var path in zip.files){var mm=path.match(/ppt\/slides\/slide(\d+)\.xml/);if(mm){var content=await zip.file(path).async("string");var text=exText(content);slideTexts[mm[1]]=text;allText+=" "+text;if(/KPI Overview|Attention:.*Branding:.*Processing Ease:/i.test(text))kpiOv=text;}}var nm=allText.match(/Asset Name:\s*([A-Za-z0-9_\s&;]+?)\s+Asset Stage/i);var assetName=nm?nm[1].trim():"Unknown";var tsm=allText.match(/Date:\s*(\d{1,2}\/\d{1,2}\/\d{4},\s*\d{1,2}:\d{2}\s*[AP]M)/i);var assetDate=tsm?tsm[1]:null;var company=(allText.match(/Which Company\?:\s*(\w+)/i)||[])[1]||null;var brand=(allText.match(/Brand Name:\s*([^\n:]+?)(?=\s+(?:Voice-Over|Asset|File|Market|Date|Category))/i)||[])[1];if(brand)brand=brand.trim();var pm=allText.match(/Scene pace is.*?(?:above|below) benchmark for\s+([A-Za-z0-9\s\-]+)/i);var platform=pm?pm[1].trim():null;for(var sn in slideTexts){var st=slideTexts[sn];if(/KPI Overview/i.test(st))continue;if(/Scene Motion.*?motion score/i.test(st)&&!thresh.sm)thresh.sm=exThresh(st);if(/Brand Cut-Through\s+\d+.*?brand cut-through/i.test(st)&&!/First Seconds/i.test(st.substring(0,100))&&!thresh.bc)thresh.bc=exThresh(st);if(/Packaged Product Attention Over Time/i.test(st)&&!thresh.pt)thresh.pt=exThresh(st);if(/Ad Recall Potential.*?ad recall potential/i.test(st)&&!thresh.ar)thresh.ar=exThresh(st);if(/Visual Simplicity.*?visual simplicity/i.test(st)&&!thresh.vs)thresh.vs=exThresh(st);if(/Enough Time to Read.*?text on the screen/i.test(st)&&!thresh.rt)thresh.rt=exThresh(st);if(/Human Element.*?incorporates a person/i.test(st)&&!thresh.he)thresh.he=exThresh(st);if(/Activation Potential: Visual.*?of scenes, the visuals/i.test(st)&&!thresh.va)thresh.va=exThresh(st);if(/Activation Potential: Text.*?scenes with text/i.test(st)&&!thresh.ta)thresh.ta=exThresh(st);if(/Engagement Potential.*?engagement potential/i.test(st)&&!thresh.ep)thresh.ep=exThresh(st);}function gv(rx){var m=kpiOv.match(rx);return m?parseInt(m[1]):undefined;}kpiData.sm=gv(/(\d+)\s+Scene Motion/i);kpiData.bc=gv(/(\d+)\s+Brand Cut-Through(?!\s+in\s+First)/i);kpiData.pt=gv(/(\d+)\s+Packaged Product Attention Over Time/i);kpiData.ar=gv(/(\d+)\s+Ad Recall Potential/i);kpiData.vs=gv(/(\d+)\s+Visual Simplicity/i);kpiData.rt=gv(/(\d+)\s+Enough Time to Read/i);kpiData.he=gv(/(\d+)\s+Human Element/i);kpiData.va=gv(/(\d+)\s+Activation Potential:\s*Visual/i);kpiData.ta=gv(/(\d+)\s+Activation Potential:\s*Text/i);kpiData.ep=gv(/(\d+)\s+Engagement Potential/i);var bin={eb:/Engaging Beginning.*?has enough movement/i.test(allText)&&!/has not enough movement/i.test(allText),sp:/Scene pace is.*?\d+\.?\d*\s+which is\s+above benchmark/i.test(allText),bf:/Brand Cut-Through in First Seconds.*?The brand attracts enough attention/i.test(allText),pf:/Packaged Product Cut-Through in First Seconds.*?The product attracts enough attention in the first \d+ seconds/i.test(allText),ar:/Ideal Aspect Ratio.*?The video respects the ideal aspect ratio/i.test(allText)&&!/does not respect/i.test(allText),so:/Ideal Sound Setting.*?The video respects the ideal audio settings/i.test(allText)&&!/does not respect/i.test(allText),ct:/Call-to-Action Cut-Through.*?Call-to-action cuts through above norm in none/i.test(allText)};var cats=mkCats();function applyT(kpi,t){if(t){kpi.thresholds=t;kpi.hasAmber=t.hasAmber;}}applyT(cats.attention.kpis[2],thresh.sm);applyT(cats.branding.kpis[0],thresh.bc);applyT(cats.branding.kpis[2],thresh.pt);applyT(cats.processing.kpis[0],thresh.ar);applyT(cats.processing.kpis[1],thresh.vs);applyT(cats.processing.kpis[3],thresh.rt);applyT(cats.emotional.kpis[0],thresh.he);applyT(cats.emotional.kpis[1],thresh.va);applyT(cats.emotional.kpis[2],thresh.ta);applyT(cats.persuasion.kpis[1],thresh.ep);function applyN(kpi,val){if(val!==undefined){kpi.value=val;kpi.original=detColor(val,kpi.thresholds);}}applyN(cats.attention.kpis[2],kpiData.sm);applyN(cats.branding.kpis[0],kpiData.bc);applyN(cats.branding.kpis[2],kpiData.pt);applyN(cats.processing.kpis[0],kpiData.ar);applyN(cats.processing.kpis[1],kpiData.vs);applyN(cats.processing.kpis[3],kpiData.rt);applyN(cats.emotional.kpis[0],kpiData.he);applyN(cats.emotional.kpis[1],kpiData.va);applyN(cats.emotional.kpis[2],kpiData.ta);applyN(cats.persuasion.kpis[1],kpiData.ep);function applyB(kpi,val){kpi.original=val?"green":"red";kpi.value=val?"✓":"✗";}applyB(cats.attention.kpis[0],bin.eb);applyB(cats.attention.kpis[1],bin.sp);applyB(cats.branding.kpis[1],bin.bf);applyB(cats.branding.kpis[3],bin.pf);applyB(cats.processing.kpis[2],bin.ar);applyB(cats.processing.kpis[4],bin.so);cats.persuasion.kpis[0].original=bin.ct?"red":"green";cats.persuasion.kpis[0].value=bin.ct?"✗":"✓";return{categories:cats,assetInfo:{name:assetName,date:assetDate,company:company,brand:brand,platform:platform,thumbnail:thumbUrl}};}
 
-var folderCtxId = null;
-function showFolderCtx(e, id) {
-e.preventDefault(); e.stopPropagation(); folderCtxId = id;
-var m = document.getElementById("folder-ctx-menu");
-m.style.display = "block";
-m.style.left = e.clientX+"px"; m.style.top = e.clientY+"px";
-var r = m.getBoundingClientRect();
-if (r.right > window.innerWidth) m.style.left = (e.clientX-r.width)+"px";
-if (r.bottom > window.innerHeight) m.style.top = (e.clientY-r.height)+"px";
-}
-function hideFolderCtx() { document.getElementById("folder-ctx-menu").style.display="none"; folderCtxId=null; }
-async function folderCtxRename() {
-if (!folderCtxId) return;
-var f = state.folders.find(function(x){ return x.id===folderCtxId; });
-var name = prompt("Rename:", f?f.name:"");
-if (!name || name===(f&&f.name)) return;
-await api("/api/folders/"+folderCtxId, {method:"PUT", body:JSON.stringify({name:name})});
-await loadFolders(); renderSidebar(); renderGrid(); renderBreadcrumb();
-}
-async function folderCtxDelete() {
-if (!folderCtxId) return;
-var id = folderCtxId;
-hideFolderCtx();
-await safeDeleteFolder(id, async function(){
-  if (state.folderId===id) state.folderId = state.projectId;
-  await loadFolders();
-  renderSidebar();
-  renderGrid();
-});
-}
-
-async function safeDeleteFolder(id, onSuccess) {
-var data = await api("/api/folders/"+id+"/count");
-var count = data.count || 0;
-var folder = state.folders.find(function(f){ return f.id===id; });
-var name = folder ? folder.name : "this folder";
-var msg = count > 0
-  ? 'Delete "'+name+'"?\n\n'+count+' asset'+(count!==1?'s':'')+' and all their files will be permanently deleted. This cannot be undone.'
-  : 'Delete "'+name+'"?';
-if (!confirm(msg)) return;
-await api("/api/folders/"+id, {method:"DELETE"});
-if (onSuccess) onSuccess();
-}
-
-
-var reportVersionId = null;
-var reportFile = null;
-var reportVideoName = null;
-
-function showReportModal(versionId, videoFilename) {
-reportVersionId = versionId;
-reportVideoName = videoFilename || null;
-reportFile = null;
-document.getElementById("report-fname").textContent = "";
-document.getElementById("report-status").style.display = "none";
-document.getElementById("report-submit").disabled = false;
-document.getElementById("report-modal").style.display = "block";
-}
-function closeReportModal() {
-document.getElementById("report-modal").style.display = "none";
-reportVersionId = null; reportFile = null;
-}
-document.getElementById("report-overlay").addEventListener("click", function(e){ if(e.target===this) closeReportModal(); });
-function reportPicked(input) {
-if (!input.files[0]) return;
-reportFile = input.files[0];
-document.getElementById("report-fname").textContent = "✓ " + input.files[0].name;
-}
-function reportDrop(e) {
-e.preventDefault(); dzOut("report-dz");
-var f = e.dataTransfer.files[0];
-if (!f || !/\.pptx$/i.test(f.name)) { setRptStatus("Please drop a PPTX file", "error"); return; }
-reportFile = f;
-document.getElementById("report-fname").textContent = "✓ " + f.name;
-}
-function setRptStatus(msg, type) {
-var el = document.getElementById("report-status");
-el.style.display = "block"; el.className = "upstatus "+type; el.textContent = msg;
-}
-async function submitReport() {
-if (!reportFile) { setRptStatus("Please select a PPTX file", "error"); return; }
-if (reportVideoName && !checkPair(reportVideoName, reportFile.name)) {
-if (!confirm('This report may not belong to this video.\n\nVideo: ' + reportVideoName + '\nReport: ' + reportFile.name + '\n\nPair them anyway?')) {
-  return;
-}
-}
-document.getElementById("report-submit").disabled = true;
-setRptStatus("Parsing report...", "info");
-try {
-  var parsed = await parsePPTX(reportFile);
-  var aceScore = calcACE(parsed.categories);
-  setRptStatus("Uploading...", "info");
-  var form = new FormData();
-  form.append("pptx", reportFile);
-  form.append("scores", JSON.stringify(parsed.categories));
-  form.append("asset_info", JSON.stringify(parsed.assetInfo));
-  form.append("ace_score", aceScore);
-  if (parsed.assetInfo.thumbnail) form.append("thumbnail", parsed.assetInfo.thumbnail);
-  var res = await fetch("/api/versions/"+reportVersionId+"/report", {method:"POST", body:form});
-  var data = await res.json();
-  if (data.ok) {
-    setRptStatus("Report added!", "success");
-    setTimeout(function(){
-      closeReportModal();
-      loadAssets(state.folderId);
-      if (document.getElementById("detail-view").style.display !== "none" && state.currentAsset) {
-        openAsset(state.currentAsset.id);
-      }
-    }, 1000);
-  } else {
-    setRptStatus("Error: "+(data.error||"Failed"), "error");
-    document.getElementById("report-submit").disabled = false;
-  }
-} catch(err) {
-  setRptStatus("Error: "+err.message, "error");
-  document.getElementById("report-submit").disabled = false;
-}
-}
-function addReportFromCtx() {
-var asset = state.assets.find(function(a){ return a.id===ctxId; });
-if (!asset || !asset.latest_version_id) return;
-showReportModal(asset.latest_version_id, asset.video_filename);
-}
-
-function checkPair(videoName, pptxName) {
-var vNorm = videoName.toLowerCase().replace(/[^a-z0-9]/g, '');
-var pNorm = pptxName.toLowerCase().replace(/[^a-z0-9]/g, '');
-
-// Direction 1: does PPTX contain the video token?
-if (pNorm.includes(vNorm)) return true;
-
-// Direction 2: strip Brainsuite boilerplate, check if PPTX core is in video
-var pCore = pptxName.toLowerCase()
-  .replace(/^ace[^_]*_/, '')       // strip 'ace-social-media-video-updated_'
-  .replace(/_?\d{8}\.pptx$/, '')   // strip '_20260213.pptx'
-  .replace(/^[a-z]+_/, '')         // strip company name e.g. 'unilever_'
-  .replace(/[^a-z0-9]/g, '');
-
-return pCore.length > 4 && vNorm.includes(pCore);
-}
-
-// ── Init ──────────────────────────────────────────────────────────────────────
-async function init() {
-  await loadFolders();
-  showHome();
-}
+async function init(){await loadFolders();showHome();}
 init();
 </script>
 

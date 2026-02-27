@@ -94,7 +94,7 @@ def folder_count(fid):
 def get_assets():
     folder_id = request.args.get("folder_id")
     conn = get_db()
-    base_q = "SELECT a.id, a.base_name, a.folder_id, a.created_at, v.ace_score, v.asset_info, v.thumbnail, v.uploaded_at, v.version_number as latest_version, v.id as latest_version_id, v.video_filename FROM assets a LEFT JOIN versions v ON v.asset_id = a.id AND v.is_latest = 1 WHERE a.folder_id"
+    base_q = "SELECT a.id, a.base_name, a.display_name, a.phase, a.platform, a.format, a.is_master, a.audience_tags, a.folder_id, a.created_at, v.ace_score, v.asset_info, v.thumbnail, v.uploaded_at, v.version_number as latest_version, v.id as latest_version_id, v.video_filename FROM assets a LEFT JOIN versions v ON v.asset_id = a.id AND v.is_latest = 1 WHERE a.folder_id"
     if folder_id:
         rows = conn.execute(base_q + " = ? ORDER BY a.base_name", (folder_id,)).fetchall()
     else:
@@ -123,6 +123,59 @@ def update_asset(aid):
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
+
+@app.route("/api/assets/<int:aid>/tags", methods=["PUT"])
+def update_tags(aid):
+    data = request.get_json()
+    display_name = data.get("display_name")
+    phase = data.get("phase")
+    platform = data.get("platform")
+    fmt = data.get("format")
+    is_master = 1 if data.get("is_master") else 0
+    audience_tags = json.dumps(data.get("audience_tags", []))
+    project_id = data.get("project_id")
+    conn = get_db()
+    new_folder_id = None
+    if project_id and phase and platform:
+        def find_or_create(name, parent_id):
+            r = conn.execute("SELECT id FROM folders WHERE name=? AND parent_id=?", (name, parent_id)).fetchone()
+            if r: return r["id"]
+            cur = conn.execute("INSERT INTO folders (name, parent_id) VALUES (?,?)", (name, parent_id))
+            conn.commit()
+            return cur.lastrowid
+        phase_id = find_or_create(phase, project_id)
+        plat_id = find_or_create(platform, phase_id)
+        new_folder_id = find_or_create(fmt, plat_id) if fmt else plat_id
+    conn.execute("UPDATE assets SET display_name=?,phase=?,platform=?,format=?,is_master=?,audience_tags=?,folder_id=? WHERE id=?", (display_name, phase, platform, fmt, is_master, audience_tags, new_folder_id, aid))
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True, "folder_id": new_folder_id})
+
+@app.route("/api/tags")
+def get_tags():
+    project_id = request.args.get("project_id")
+    conn = get_db()
+    if project_id:
+        sql = (
+            "WITH RECURSIVE pf AS ("
+            "SELECT id FROM folders WHERE id = ? "
+            "UNION ALL "
+            "SELECT f.id FROM folders f INNER JOIN pf ON f.parent_id = pf.id) "
+            "SELECT audience_tags FROM assets "
+            "WHERE folder_id IN (SELECT id FROM pf) "
+            "AND audience_tags IS NOT NULL AND audience_tags != '[]'"
+        )
+        rows = conn.execute(sql, (project_id,)).fetchall()
+    else:
+        rows = conn.execute("SELECT audience_tags FROM assets WHERE audience_tags IS NOT NULL").fetchall()
+    conn.close()
+    all_tags = set()
+    for row in rows:
+        try:
+            for tag in json.loads(row["audience_tags"] or "[]"):
+                all_tags.add(tag)
+        except: pass
+    return jsonify(sorted(list(all_tags)))
 
 @app.route("/api/versions/<int:aid>", methods=["GET"])
 def get_versions(aid):
