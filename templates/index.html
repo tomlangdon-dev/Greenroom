@@ -132,6 +132,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .move-opt{padding:10px 14px;cursor:pointer;font-size:13px;border-radius:6px;transition:all .15s;color:#1e293b}
 .move-opt:hover{background:#f5f3ff;color:#4f46e5}
 .move-opt.cur{opacity:.4;cursor:default;background:none}
+.cthumb img, .cph { transition: opacity 0.15s; }
 </style>
 </head>
 <body>
@@ -326,6 +327,9 @@ function renderGrid() {
     return;
   }
   grid.innerHTML = subFolders.map(makeFolderCard).join("") + state.assets.map(makeCard).join("");
+  grid.querySelectorAll(".card[data-video]").forEach(function(card) {
+if (card.dataset.video) initCardPreview(card);
+});
 }
 
 function makeFolderCard(folder) {
@@ -344,7 +348,7 @@ function makeCard(a) {
   var thumb = a.thumbnail ? '<img src="'+a.thumbnail+'" alt="">' : '<span class="cph">🎬</span>';
   var date = a.uploaded_at ? new Date(a.uploaded_at).toLocaleDateString("en-GB",{day:"numeric",month:"short"}) : "";
   var ace = s !== null ? "ACE "+s : "No score";
-  var h = '<div class="card" draggable="true" onclick="openAsset('+a.id+')" ondragstart="cardDragStart(event,'+a.id+')" ondragend="cardDragEnd()">';
+  var h = '<div class="card" data-video="'+(a.video_filename||'')+'" draggable="true" onclick="openAsset('+a.id+')" ondragstart="cardDragStart(event,'+a.id+')" ondragend="cardDragEnd()">';
   h += '<div class="cthumb">'+thumb+'<span class="ace '+cls+'">'+ace+'</span>';
   h += '<div class="card-menu"><button class="cmb" onclick="event.stopPropagation();moveAsset('+a.id+')">Move</button><button class="cmb del" onclick="event.stopPropagation();deleteAssetCard('+a.id+')">Delete</button></div>';
   h += '</div>';
@@ -520,6 +524,10 @@ async function submitUpload() {
       assetInfoJson=JSON.stringify(parsed.assetInfo); thumbnail=parsed.assetInfo.thumbnail||null;
     }catch(err){console.error(err);setStatus("Could not parse PPTX — uploading video only","info");}
   }
+  if (!thumbnail && uploadFiles.video) {
+    setStatus("Generating thumbnail...", "info");
+    thumbnail = await generateVideoThumbnail(uploadFiles.video);
+}
   setStatus("Uploading...","info");
   var form=new FormData();
   form.append("video",uploadFiles.video);
@@ -638,6 +646,38 @@ return new Promise(function(resolve) {
   video.onerror = function() { URL.revokeObjectURL(url); resolve(null); };
   video.src = url;
   video.load();
+});
+}
+
+function initCardPreview(card) {
+var src = card.dataset.video;
+if (!src) return;
+var thumb = card.querySelector(".cthumb");
+var video = document.createElement("video");
+video.muted = true;
+video.playsInline = true;
+video.preload = "none";
+video.style.cssText = "position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 0.15s;pointer-events:none;";
+thumb.appendChild(video);
+var loaded = false;
+card.addEventListener("mouseenter", function() {
+  if (!loaded) { video.src = "/uploads/videos/" + src; video.load(); loaded = true; }
+  var bg = thumb.querySelector("img, .cph"); if (bg) bg.style.opacity = "0";
+  video.style.opacity = "1";
+});
+card.addEventListener("mousemove", function(e) {
+  if (!video.duration) return;
+  var rect = thumb.getBoundingClientRect();
+  var pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  video.currentTime = pct * video.duration;
+});
+card.addEventListener("mouseleave", function() {
+  video.style.opacity = "0"; video.pause();
+  var bg = thumb.querySelector("img, .cph"); if (bg) bg.style.opacity = "1";
+});
+card.addEventListener("dragstart", function() {
+  video.style.opacity = "0";
+  var bg = thumb.querySelector("img, .cph"); if (bg) bg.style.opacity = "1";
 });
 }
 
