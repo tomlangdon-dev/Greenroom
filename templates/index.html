@@ -152,7 +152,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 <body>
 
 <div class="hdr">
-  <div class="logo" onclick="showHome()">🎬 VAM</div>
+  <div class="logo" onclick="showHome()">🎬 Campaign Manager</div>
   <div class="breadcrumb" id="breadcrumb"></div>
   <div id="hdr-btns" style="display:flex;gap:8px"></div>
 </div>
@@ -257,9 +257,35 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
   </div>
 </div>
 
+<div id="report-modal" style="display:none">
+<div class="modal-overlay" id="report-overlay">
+  <div class="modal">
+    <div class="modal-hdr">
+      <h2>Add Brainsuite Report</h2>
+      <button class="modal-close" onclick="closeReportModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="dz" id="report-dz" ondragover="dzOver(event,'report-dz')" ondragleave="dzOut('report-dz')" ondrop="reportDrop(event)">
+        <input type="file" id="report-input" accept=".pptx" onchange="reportPicked(this)">
+        <div class="dz-icon">📊</div>
+        <div class="dz-title">Brainsuite PPTX Report</div>
+        <div class="dz-sub">Drop or click to browse</div>
+        <div class="dz-file" id="report-fname"></div>
+      </div>
+      <div id="report-status" style="display:none"></div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn btn-ghost" onclick="closeReportModal()">Cancel</button>
+      <button class="btn btn-primary" id="report-submit" onclick="submitReport()">Add Report</button>
+    </div>
+  </div>
+</div>
+</div>
+
 <div id="ctx-menu">
-  <div class="ctx-item" onclick="hideCtx();moveAsset(ctxId)">📁 Move to folder...</div>
-  <div class="ctx-item ctx-danger" onclick="var id=ctxId;hideCtx();deleteAssetCard(id)">🗑 Delete</div>
+<div class="ctx-item" onclick="addReportFromCtx();hideCtx()">📊 Add Report</div>
+<div class="ctx-item" onclick="hideCtx();moveAsset(ctxId)">📁 Move to folder...</div>
+<div class="ctx-item ctx-danger" onclick="var id=ctxId;hideCtx();deleteAssetCard(id)">🗑 Delete</div>
 </div>
 
 <div id="proj-ctx-menu">
@@ -533,6 +559,9 @@ async function submitMove(assetId, folderId) {
 // ── Context Menus ─────────────────────────────────────────────────────────────
 function showCtx(e, id) {
   e.preventDefault(); e.stopPropagation(); ctxId=id;
+  var asset = state.assets.find(function(a){ return a.id===id; });
+var rptItem = document.querySelector("#ctx-menu .ctx-item:first-child");
+rptItem.style.display = (asset && asset.ace_score === null) ? "block" : "none";
   var m=document.getElementById("ctx-menu"); m.style.display="block";
   m.style.left=e.clientX+"px"; m.style.top=e.clientY+"px";
   var r=m.getBoundingClientRect();
@@ -581,6 +610,16 @@ function renderDetail(asset, version) {
   mb.innerHTML=tags.map(function(t){ return '<span class="meta-tag">'+t+'</span>'; }).join("");
   mb.style.display=tags.length?"flex":"none";
   renderScores(version);
+  var btn = document.getElementById("add-report-btn");
+if (!btn) {
+btn = document.createElement("button");
+btn.id = "add-report-btn";
+btn.className = "btn btn-ghost";
+btn.style.fontSize = "12px";
+document.querySelector(".detail-hdr").appendChild(btn);
+}
+btn.textContent = version.kpi_data ? "📊 Replace Report" : "📊 Add Report";
+btn.onclick = function(){ showReportModal(version.id); };
 }
 async function switchVersion(versionId) {
   var v=state.currentAsset.versions.find(function(x){ return x.id===parseInt(versionId); });
@@ -678,22 +717,26 @@ async function folderDrop(e,folderId){
   if(!state.draggingAssetId)return;
   await submitMove(state.draggingAssetId,folderId);state.draggingAssetId=null;
 }
-window.addEventListener("dragenter",function(e){
-  if(state.draggingAssetId)return;
-  if(document.getElementById("upload-modal").style.display==="block"||document.getElementById("move-modal").style.display==="block")return;
-  if(!e.dataTransfer||!Array.from(e.dataTransfer.types||[]).includes("Files"))return;
-  dragCounter++;if(dragCounter===1)document.getElementById("drag-overlay").classList.add("active");
+window.addEventListener("dragenter", function(e) {
+if (state.draggingAssetId) return;
+if (document.getElementById("upload-modal").style.display==="block"
+  || document.getElementById("move-modal").style.display==="block"
+  || document.getElementById("report-modal").style.display==="block") return;
+if (!e.dataTransfer || !Array.from(e.dataTransfer.types||[]).includes("Files")) return;
+dragCounter++; if(dragCounter===1) document.getElementById("drag-overlay").classList.add("active");
 });
-window.addEventListener("dragleave",function(){
-  if(state.draggingAssetId)return;
-  dragCounter--;if(dragCounter<=0){dragCounter=0;document.getElementById("drag-overlay").classList.remove("active");}
+window.addEventListener("dragleave", function() {
+if (state.draggingAssetId) return;
+if (document.getElementById("report-modal").style.display==="block") return;
+dragCounter--; if(dragCounter<=0){dragCounter=0;document.getElementById("drag-overlay").classList.remove("active");}
 });
 window.addEventListener("dragover",function(e){e.preventDefault();});
-window.addEventListener("drop",function(e){
-  e.preventDefault();dragCounter=0;document.getElementById("drag-overlay").classList.remove("active");
-  if(state.draggingAssetId)return;
-  if(document.getElementById("upload-modal").style.display==="block")return;
-  if(!state.projectId)return;
+window.addEventListener("drop", function(e) {
+e.preventDefault(); dragCounter=0; document.getElementById("drag-overlay").classList.remove("active");
+if (state.draggingAssetId) return;
+if (document.getElementById("upload-modal").style.display==="block") return;
+if (document.getElementById("report-modal").style.display==="block") return;
+if (!state.projectId) return;
   var files=Array.from(e.dataTransfer.files);
   var video=files.find(function(f){return /\.(mp4|mov|avi|webm|mkv)$/i.test(f.name);});
   var pptx=files.find(function(f){return /\.pptx$/i.test(f.name);});
@@ -813,6 +856,78 @@ if (!confirm('Delete "' + (f?f.name:"") + '"? Assets inside will move up a level
 await api("/api/folders/"+folderCtxId, {method:"DELETE"});
 if (state.folderId===folderCtxId) state.folderId = state.projectId;
 await loadFolders(); renderSidebar(); renderGrid();
+}
+
+var reportVersionId = null;
+var reportFile = null;
+
+function showReportModal(versionId) {
+reportVersionId = versionId;
+reportFile = null;
+document.getElementById("report-fname").textContent = "";
+document.getElementById("report-status").style.display = "none";
+document.getElementById("report-submit").disabled = false;
+document.getElementById("report-modal").style.display = "block";
+}
+function closeReportModal() {
+document.getElementById("report-modal").style.display = "none";
+reportVersionId = null; reportFile = null;
+}
+document.getElementById("report-overlay").addEventListener("click", function(e){ if(e.target===this) closeReportModal(); });
+function reportPicked(input) {
+if (!input.files[0]) return;
+reportFile = input.files[0];
+document.getElementById("report-fname").textContent = "✓ " + input.files[0].name;
+}
+function reportDrop(e) {
+e.preventDefault(); dzOut("report-dz");
+var f = e.dataTransfer.files[0];
+if (!f || !/\.pptx$/i.test(f.name)) { setRptStatus("Please drop a PPTX file", "error"); return; }
+reportFile = f;
+document.getElementById("report-fname").textContent = "✓ " + f.name;
+}
+function setRptStatus(msg, type) {
+var el = document.getElementById("report-status");
+el.style.display = "block"; el.className = "upstatus "+type; el.textContent = msg;
+}
+async function submitReport() {
+if (!reportFile) { setRptStatus("Please select a PPTX file", "error"); return; }
+document.getElementById("report-submit").disabled = true;
+setRptStatus("Parsing report...", "info");
+try {
+  var parsed = await parsePPTX(reportFile);
+  var aceScore = calcACE(parsed.categories);
+  setRptStatus("Uploading...", "info");
+  var form = new FormData();
+  form.append("pptx", reportFile);
+  form.append("scores", JSON.stringify(parsed.categories));
+  form.append("asset_info", JSON.stringify(parsed.assetInfo));
+  form.append("ace_score", aceScore);
+  if (parsed.assetInfo.thumbnail) form.append("thumbnail", parsed.assetInfo.thumbnail);
+  var res = await fetch("/api/versions/"+reportVersionId+"/report", {method:"POST", body:form});
+  var data = await res.json();
+  if (data.ok) {
+    setRptStatus("Report added!", "success");
+    setTimeout(function(){
+      closeReportModal();
+      loadAssets(state.folderId);
+      if (document.getElementById("detail-view").style.display !== "none" && state.currentAsset) {
+        openAsset(state.currentAsset.id);
+      }
+    }, 1000);
+  } else {
+    setRptStatus("Error: "+(data.error||"Failed"), "error");
+    document.getElementById("report-submit").disabled = false;
+  }
+} catch(err) {
+  setRptStatus("Error: "+err.message, "error");
+  document.getElementById("report-submit").disabled = false;
+}
+}
+function addReportFromCtx() {
+var asset = state.assets.find(function(a){ return a.id===ctxId; });
+if (!asset || !asset.latest_version_id) return;
+showReportModal(asset.latest_version_id);
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────

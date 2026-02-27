@@ -140,3 +140,24 @@ def update_asset(aid):
     conn.commit()
     conn.close()
     return jsonify({"ok": True})
+
+
+@app.route("/api/versions/<int:vid>/report", methods=["POST"])
+def add_report(vid):
+    pptx = request.files.get("pptx")
+    scores_json = request.form.get("scores")
+    asset_info_json = request.form.get("asset_info")
+    thumbnail = request.form.get("thumbnail")
+    ace_score = request.form.get("ace_score")
+    pptx_filename = pptx_path = None
+    if pptx:
+        uid = str(uuid.uuid4())[:8]
+        pptx_orig = secure_filename(pptx.filename)
+        pptx_filename = uid + "_" + pptx_orig
+        pptx_path = os.path.join(PPTX_DIR, pptx_filename)
+        pptx.save(pptx_path)
+    conn = get_db()
+    conn.execute("UPDATE versions SET pptx_filename=?, pptx_path=?, ace_score=?, kpi_data=?, asset_info=?, thumbnail=? WHERE id=?", (pptx_filename, pptx_path, ace_score, scores_json, asset_info_json, thumbnail, vid))
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
