@@ -1,69 +1,648 @@
 <html lang="en"><head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Asset Manager</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #0f172a;
-            color: #e2e8f0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-        }
-        .card {
-            background: #1e293b;
-            border: 1px solid #334155;
-            border-radius: 16px;
-            padding: 48px;
-            text-align: center;
-            max-width: 480px;
-            width: 90%;
-        }
-        .icon  { font-size: 56px; margin-bottom: 20px; }
-        h1     { font-size: 26px; font-weight: 700; margin-bottom: 8px; }
-        .sub   { color: #64748b; font-size: 14px; margin-bottom: 32px; }
-        .badge {
-            display: inline-block;
-            background: #10b981;
-            color: white;
-            padding: 8px 20px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 700;
-            margin-bottom: 28px;
-        }
-        .checklist {
-            text-align: left;
-            background: #0f172a;
-            border-radius: 10px;
-            padding: 20px 24px;
-            font-size: 14px;
-            line-height: 2.2;
-            color: #94a3b8;
-        }
-        .done  { color: #10b981; }
-        .next  { color: #f59e0b; }
-        .todo  { color: #475569; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Video Asset Manager</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f1f5f9;color:#1e293b;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+.hdr{height:58px;background:white;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.logo{font-size:17px;font-weight:700;color:#1e293b;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.breadcrumb{flex:1;font-size:13px;display:flex;align-items:center;flex-wrap:wrap;gap:2px}
+.bc-item{cursor:pointer;color:#64748b;transition:color .15s}
+.bc-item:hover{color:#6366f1}
+.bc-cur{color:#1e293b;font-weight:600;cursor:default}
+.bc-sep{color:#cbd5e0;margin:0 4px;font-size:11px}
+.btn{padding:8px 14px;border-radius:6px;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
+.btn-primary{background:#6366f1;color:white}.btn-primary:hover{background:#4f46e5}
+.btn-ghost{background:transparent;color:#64748b;border:1px solid #e2e8f0}.btn-ghost:hover{background:#f1f5f9}
+.body{display:flex;flex:1;overflow:hidden}
+.sidebar{width:240px;background:#0f172a;flex-shrink:0;display:flex;flex-direction:column;overflow-y:auto;padding-bottom:16px}
+.slabel{padding:20px 16px 6px;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#334155;font-weight:700}
+.frow{display:flex;align-items:center;padding:7px 8px 7px 12px;margin:1px 8px;border-radius:6px;cursor:pointer;color:#64748b;font-size:13px;transition:all .15s;border-left:3px solid transparent}
+.frow:hover{background:#1e293b;color:#cbd5e1}
+.frow.active{background:#1e293b;color:#e2e8f0;border-left-color:#6366f1}
+.ficon{width:22px;text-align:center;font-size:13px;flex-shrink:0;margin-right:6px}
+.fname{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.factions{display:none;gap:2px;margin-right:2px}
+.frow:hover .factions{display:flex}
+.ibtn{background:none;border:none;cursor:pointer;padding:2px 4px;border-radius:3px;font-size:11px;color:#475569;line-height:1}
+.ibtn:hover{background:#334155;color:#e2e8f0}
+.finput-row{margin:4px 8px}
+.finput{width:100%;padding:6px 10px;background:#1e293b;border:1px solid #6366f1;border-radius:6px;color:#e2e8f0;font-size:13px}
+.finput:focus{outline:none}
+.addbtn{margin:8px;padding:8px;background:none;border:1px dashed #1e293b;border-radius:6px;color:#334155;font-size:12px;cursor:pointer;width:calc(100% - 16px);transition:all .15s}
+.addbtn:hover{border-color:#6366f1;color:#6366f1}
+.main{flex:1;overflow:hidden;display:flex;flex-direction:column}
+#grid-view{flex:1;overflow-y:auto}
+.mtoolbar{padding:20px 24px 16px;display:flex;align-items:baseline;gap:10px}
+.mtitle{font-size:18px;font-weight:700}
+.mcount{font-size:12px;color:#94a3b8}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;padding:0 24px 24px}
+.folder-card{background:white;border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08);cursor:pointer;transition:all .2s;border:2px solid transparent}
+.folder-card:hover{transform:translateY(-3px);box-shadow:0 8px 20px rgba(0,0,0,.12);border-color:#6366f1}
+.fc-thumb{height:120px;background:linear-gradient(135deg,#1e293b 0%,#334155 100%);display:flex;align-items:center;justify-content:center;font-size:52px}
+.fc-body{padding:12px}
+.fc-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fc-meta{font-size:11px;color:#94a3b8;margin-top:3px}
+.card{background:white;border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.08);cursor:pointer;transition:all .2s;border:2px solid transparent}
+.card:hover{transform:translateY(-3px);box-shadow:0 8px 20px rgba(0,0,0,.12);border-color:#6366f1}
+.cthumb{height:120px;background:#0f172a;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.cthumb img{width:100%;height:100%;object-fit:cover}
+.cph{font-size:40px;opacity:.2}
+.ace{position:absolute;top:8px;right:8px;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:700}
+.ace.green{background:#10b981;color:white}.ace.amber{background:#f59e0b;color:white}.ace.red{background:#ef4444;color:white}.ace.none{background:rgba(255,255,255,.15);color:rgba(255,255,255,.7)}
+.card-menu{position:absolute;bottom:8px;left:8px;display:none;gap:4px}
+.card:hover .card-menu{display:flex}
+.cmb{background:rgba(15,23,42,.75);backdrop-filter:blur(4px);border:none;color:white;border-radius:4px;padding:4px 8px;cursor:pointer;font-size:10px;font-weight:600;transition:all .15s;line-height:1.4}
+.cmb:hover{background:rgba(15,23,42,.95)}
+.cmb.del:hover{background:#ef4444}
+.cbody{padding:12px}
+.cname{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:6px}
+.cmeta{display:flex;align-items:center;gap:8px}
+.vtag{background:#f1f5f9;color:#64748b;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600}
+.cdate{font-size:11px;color:#94a3b8}
+.empty{grid-column:1/-1;text-align:center;padding:80px 20px}
+.eicon{font-size:56px;margin-bottom:16px}
+.etitle{font-size:17px;font-weight:600;color:#475569;margin-bottom:8px}
+.esub{font-size:14px;color:#94a3b8}
+#detail-view{display:none;flex-direction:column;flex:1;overflow:hidden}
+.detail-hdr{padding:12px 20px;background:white;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.back-btn{background:none;border:none;font-size:13px;color:#6366f1;cursor:pointer;font-weight:600;padding:6px 10px;border-radius:6px;transition:all .15s;white-space:nowrap}
+.back-btn:hover{background:#f5f3ff}
+.detail-name{flex:1;font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ver-select{padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:12px;color:#1e293b;cursor:pointer;background:white}
+.ver-select:focus{outline:none;border-color:#6366f1}
+.detail-meta-bar{padding:10px 20px;display:flex;flex-wrap:wrap;gap:6px;border-bottom:1px solid #e2e8f0;background:white;flex-shrink:0}
+.meta-tag{background:#f1f5f9;color:#475569;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:500}
+.detail-cols{display:flex;flex:1;overflow:hidden}
+.vcol{flex:1;background:#0a0a0a;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.vcol video{width:100%;height:100%;object-fit:contain}
+.scol{width:300px;flex-shrink:0;border-left:1px solid #e2e8f0;overflow-y:auto;background:white}
+.ace-display{padding:24px 16px;text-align:center;border-bottom:1px solid #f1f5f9}
+.ace-num{font-size:64px;font-weight:700;line-height:1}
+.ace-lbl{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:#94a3b8;margin-top:4px;font-weight:600}
+.ace-stat{font-size:12px;font-weight:700;margin-top:6px;text-transform:uppercase;letter-spacing:0.5px;padding:4px 12px;border-radius:12px;display:inline-block}
+.ace-green .ace-num{color:#10b981}.ace-green .ace-stat{background:#d1fae5;color:#065f46}
+.ace-amber .ace-num{color:#f59e0b}.ace-amber .ace-stat{background:#fef3c7;color:#92400e}
+.ace-red .ace-num{color:#ef4444}.ace-red .ace-stat{background:#fee2e2;color:#991b1b}
+.cats{padding:8px}
+.cat-sec{margin-bottom:4px;border-radius:8px;overflow:hidden;border:1px solid #e2e8f0}
+.cat-hdr{display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:pointer;background:#f8fafc;transition:background .15s;user-select:none}
+.cat-hdr:hover{background:#f1f5f9}
+.cat-nm{flex:1;font-size:13px;font-weight:600}
+.cat-wt{font-size:10px;color:#94a3b8;font-weight:600}
+.cat-sc{padding:2px 8px;border-radius:10px;font-size:12px;font-weight:700}
+.cg{background:#d1fae5;color:#065f46}.ca{background:#fef3c7;color:#92400e}.cr{background:#fee2e2;color:#991b1b}
+.cat-chv{font-size:10px;color:#94a3b8;transition:transform .2s}
+.cat-chv.open{transform:rotate(180deg)}
+.cat-kpis{background:white}
+.kpi-row{display:flex;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid #f8fafc}
+.kpi-row:last-child{border-bottom:none}
+.kpi-nm{flex:1;font-size:11px;color:#475569;line-height:1.3}
+.kpi-badge{padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;white-space:nowrap}
+.kg{background:#d1fae5;color:#065f46}.kam{background:#fef3c7;color:#92400e}.kred{background:#fee2e2;color:#991b1b}
+.no-score{padding:40px 16px;text-align:center;color:#94a3b8;font-size:13px;line-height:1.6}
+.drag-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(99,102,241,.15);backdrop-filter:blur(2px);z-index:500;display:none;align-items:center;justify-content:center;pointer-events:none}
+.drag-overlay.active{display:flex}
+.drag-msg{background:white;border:3px dashed #6366f1;border-radius:16px;padding:48px 64px;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,.15)}
+.drag-msg .di{font-size:56px;margin-bottom:16px}
+.drag-msg h2{font-size:22px;font-weight:700;color:#1e293b;margin-bottom:8px}
+.drag-msg p{color:#64748b;font-size:14px}
+.modal-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(4px)}
+.modal{background:white;border-radius:12px;max-width:480px;width:90%;box-shadow:0 20px 40px rgba(0,0,0,.2)}
+.modal-hdr{padding:20px 24px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between}
+.modal-hdr h2{font-size:15px;font-weight:700}
+.modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:#94a3b8;line-height:1;padding:0}
+.modal-close:hover{color:#1e293b}
+.modal-body{padding:20px 24px;display:flex;flex-direction:column;gap:12px}
+.modal-ftr{padding:16px 24px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:8px}
+.dz{border:2px dashed #e2e8f0;border-radius:8px;padding:20px;text-align:center;cursor:pointer;transition:all .2s;position:relative}
+.dz:hover,.dz.over{border-color:#6366f1;background:#f5f3ff}
+.dz input[type=file]{position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;cursor:pointer}
+.dz-icon{font-size:28px;margin-bottom:6px}
+.dz-title{font-size:13px;font-weight:600;color:#1e293b;margin-bottom:2px}
+.dz-sub{font-size:11px;color:#94a3b8}
+.dz-file{font-size:12px;font-weight:600;color:#6366f1;margin-top:6px;min-height:16px}
+.upstatus{padding:10px 14px;border-radius:6px;font-size:13px;font-weight:500;text-align:center;margin-top:4px}
+.upstatus.info{background:#f0f9ff;color:#0369a1}
+.upstatus.success{background:#f0fdf4;color:#166534}
+.upstatus.error{background:#fef2f2;color:#991b1b}
+.move-list{max-height:320px;overflow-y:auto;padding:4px}
+.move-opt{padding:10px 14px;cursor:pointer;font-size:13px;border-radius:6px;transition:all .15s;color:#1e293b}
+.move-opt:hover{background:#f5f3ff;color:#4f46e5}
+.move-opt.cur{opacity:.4;cursor:default;background:none}
+</style>
 </head>
 <body>
-    <div class="card">
-        <div class="icon">🎬</div>
-        <h1>Video Asset Manager</h1>
-        <div class="sub">Local asset management for Brainsuite tests</div>
-        <div class="badge">✓ Stage 1 — Server Running</div>
-        <div class="checklist">
-            <span class="done">✅</span> Flask server<br>
-            <span class="done">✅</span> SQLite database<br>
-            <span class="done">✅</span> File storage folders<br>
-            <span class="next">⏳</span> Folders &amp; assets API<br>
-            <span class="todo">○ </span> Frontend layout<br>
-            <span class="todo">○ </span> Upload + PPTX parsing<br>
-            <span class="todo">○ </span> Video player + scores<br>
-        </div>
+<div class="hdr">
+  <div class="logo">🎬 VAM</div>
+  <div class="breadcrumb" id="breadcrumb"></div>
+  <button class="btn btn-ghost" onclick="showFolderInput()">+ Folder</button>
+  <button class="btn btn-primary" id="upload-btn">⬆ Upload</button>
+</div>
+<div class="body">
+  <div class="sidebar">
+    <div class="slabel">Library</div>
+    <div id="folder-tree"></div>
+    <div class="finput-row" id="finput-row" style="display:none">
+      <input class="finput" id="finput" placeholder="Folder name..." onkeydown="handleFolderKey(event)">
     </div>
+    <button class="addbtn" onclick="showFolderInput()">+ New Folder</button>
+  </div>
+  <div class="main">
+    <div id="grid-view">
+      <div class="mtoolbar">
+        <span class="mtitle" id="mtitle">Library</span>
+        <span class="mcount" id="mcount"></span>
+      </div>
+      <div class="grid" id="grid"></div>
+    </div>
+    <div id="detail-view">
+      <div class="detail-hdr">
+        <button class="back-btn" onclick="closeDetail()">← Back</button>
+        <span class="detail-name" id="detail-name"></span>
+        <select class="ver-select" id="version-select" onchange="switchVersion(this.value)"></select>
+      </div>
+      <div class="detail-meta-bar" id="detail-meta"></div>
+      <div class="detail-cols">
+        <div class="vcol"><video id="video-player" controls=""></video></div>
+        <div class="scol"><div id="scores-content"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="drag-overlay" id="drag-overlay">
+  <div class="drag-msg">
+    <div class="di">🎬</div>
+    <h2>Drop to Upload</h2>
+    <p>Drop a video and/or Brainsuite PPTX</p>
+  </div>
+</div>
+
+<div id="upload-modal" style="display:none">
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <div class="modal-hdr">
+        <h2>Upload Asset</h2>
+        <button class="modal-close" onclick="closeUpload()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="dz" id="video-dz" ondragover="dzOver(event,'video-dz')" ondragleave="dzOut('video-dz')" ondrop="dzDrop(event,'video')">
+          <input type="file" id="video-input" accept=".mp4,.mov,.avi,.webm,.mkv" onchange="filePicked('video',this)">
+          <div class="dz-icon">🎬</div>
+          <div class="dz-title">Video File</div>
+          <div class="dz-sub">MP4, MOV, AVI, WebM</div>
+          <div class="dz-file" id="video-fname"></div>
+        </div>
+        <div class="dz" id="pptx-dz" ondragover="dzOver(event,'pptx-dz')" ondragleave="dzOut('pptx-dz')" ondrop="dzDrop(event,'pptx')">
+          <input type="file" id="pptx-input" accept=".pptx" onchange="filePicked('pptx',this)">
+          <div class="dz-icon">📊</div>
+          <div class="dz-title">Brainsuite Report <span style="font-weight:400;color:#94a3b8">(optional)</span></div>
+          <div class="dz-sub">PPTX from Brainsuite</div>
+          <div class="dz-file" id="pptx-fname"></div>
+        </div>
+        <div id="upstatus" style="display:none"></div>
+      </div>
+      <div class="modal-ftr">
+        <button class="btn btn-ghost" onclick="closeUpload()">Cancel</button>
+        <button class="btn btn-primary" id="upload-submit" onclick="submitUpload()">Upload</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="move-modal" style="display:none">
+  <div class="modal-overlay" id="move-overlay">
+    <div class="modal">
+      <div class="modal-hdr">
+        <h2>Move to Folder</h2>
+        <button class="modal-close" onclick="closeMoveModal()">×</button>
+      </div>
+      <div class="modal-body" style="padding:8px 12px">
+        <div id="move-list" class="move-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var state = { folderId: null, folders: [], assets: [], currentAsset: null, draggingAssetId: null };
+var uploadFiles = { video: null, pptx: null };
+var moveAssetId = null;
+var dragCounter = 0;
+var colorValues = { red:0, amber:50, green:100 };
+
+async function api(url, opts) {
+  var res = await fetch(url, Object.assign({ headers:{"Content-Type":"application/json"} }, opts||{}));
+  return res.json();
+}
+
+async function loadFolders() {
+  state.folders = await api("/api/folders");
+  renderSidebar();
+}
+
+async function loadAssets(fid) {
+  state.folderId = (fid !== undefined) ? fid : null;
+
+  // Close detail view if open
+  var dv = document.getElementById("detail-view");
+  if (dv.style.display !== "none") {
+    document.getElementById("video-player").pause();
+    document.getElementById("video-player").src = "";
+    dv.style.display = "none";
+    document.getElementById("grid-view").style.display = "block";
+  }
+
+  var url = fid ? "/api/assets?folder_id=" + fid : "/api/assets";
+  state.assets = await api(url);
+  renderSidebar();
+  renderGrid();
+  renderBreadcrumb();
+}
+
+function renderBreadcrumb() {
+  var path = [];
+  var id = state.folderId;
+  while (id) {
+    var folder = state.folders.find(function(f){ return f.id === id; });
+    if (!folder) break;
+    path.unshift({ id: folder.id, name: folder.name });
+    id = folder.parent_id;
+  }
+  var bc = document.getElementById("breadcrumb");
+  if (!path.length) {
+    bc.innerHTML = '<span class="bc-cur">Library</span>';
+    document.getElementById("mtitle").textContent = "Library";
+    return;
+  }
+  var html = '<span class="bc-item" onclick="loadAssets(null)">Library</span>';
+  path.forEach(function(item, i) {
+    html += '<span class="bc-sep">›</span>';
+    if (i === path.length - 1) {
+      html += '<span class="bc-cur">'+item.name+'</span>';
+    } else {
+      html += '<span class="bc-item" onclick="loadAssets('+item.id+')">'+item.name+'</span>';
+    }
+  });
+  bc.innerHTML = html;
+  document.getElementById("mtitle").textContent = path[path.length-1].name;
+}
+
+function renderSidebar() {
+  var tree = document.getElementById("folder-tree");
+  tree.innerHTML = "";
+  tree.appendChild(makeRow(null, "All Assets", 0));
+  state.folders.filter(function(f){ return !f.parent_id; }).forEach(function(f){ addFolder(f, tree, 1); });
+}
+
+function makeRow(id, label, depth) {
+  var row = document.createElement("div");
+  row.className = "frow" + (state.folderId === id ? " active" : "");
+  row.style.paddingLeft = (12 + depth * 14) + "px";
+  var acts = id ? '<span class="factions"><button class="ibtn" onclick="event.stopPropagation();renameF('+id+')">✏️</button><button class="ibtn" onclick="event.stopPropagation();deleteF('+id+')">🗑</button></span>' : "";
+  row.innerHTML = '<span class="ficon">📁</span><span class="fname">'+label+'</span>'+acts;
+  row.onclick = function() { loadAssets(id); };
+  return row;
+}
+
+function addFolder(folder, container, depth) {
+  container.appendChild(makeRow(folder.id, folder.name, depth));
+  state.folders.filter(function(f){ return f.parent_id === folder.id; }).forEach(function(c){ addFolder(c, container, depth+1); });
+}
+
+function renderGrid() {
+  var grid = document.getElementById("grid");
+  var subFolders = state.folders.filter(function(f){ return f.parent_id === state.folderId; });
+  var total = subFolders.length + state.assets.length;
+  var parts = [];
+  if (subFolders.length) parts.push(subFolders.length+" folder"+(subFolders.length!==1?"s":""));
+  if (state.assets.length) parts.push(state.assets.length+" asset"+(state.assets.length!==1?"s":""));
+  document.getElementById("mcount").textContent = parts.join(", ");
+  if (!total) {
+    grid.innerHTML = '<div class="empty"><div class="eicon">📁</div><div class="etitle">This folder is empty</div><div class="esub">Upload a video or create a sub-folder</div></div>';
+    return;
+  }
+  grid.innerHTML = subFolders.map(makeFolderCard).join("") + state.assets.map(makeCard).join("");
+}
+
+function makeFolderCard(folder) {
+  var subs = state.folders.filter(function(f){ return f.parent_id === folder.id; }).length;
+  var h = '<div class="folder-card" onclick="loadAssets('+folder.id+')" ondragover="folderDragOver(event,this)" ondragleave="folderDragLeave(this)" ondrop="folderDrop(event,'+folder.id+')">';
+  h += '<div class="fc-thumb">📁</div>';
+  h += '<div class="fc-body"><div class="fc-name">'+folder.name+'</div>';
+  if (subs) h += '<div class="fc-meta">'+subs+' sub-folder'+(subs!==1?'s':'')+'</div>';
+  h += '</div></div>';
+  return h;
+}
+
+function makeCard(a) {
+  var s = a.ace_score;
+  var cls = s===null?"none":s>=67?"green":s>=34?"amber":"red";
+  var thumb = a.thumbnail ? '<img src="'+a.thumbnail+'" alt="">' : '<span class="cph">🎬</span>';
+  var date = a.uploaded_at ? new Date(a.uploaded_at).toLocaleDateString("en-GB",{day:"numeric",month:"short"}) : "";
+  var ace = s !== null ? "ACE "+s : "No score";
+  var h = '<div class="card" draggable="true" onclick="openAsset('+a.id+')" ondragstart="cardDragStart(event,'+a.id+')" ondragend="cardDragEnd()">';
+  h += '<div class="cthumb">'+thumb+'<span class="ace '+cls+'">'+ace+'</span>';
+  h += '<div class="card-menu"><button class="cmb" onclick="event.stopPropagation();moveAsset('+a.id+')">Move</button><button class="cmb del" onclick="event.stopPropagation();deleteAssetCard('+a.id+')">Delete</button></div>';
+  h += '</div>';
+  h += '<div class="cbody"><div class="cname" title="'+a.base_name+'">'+a.base_name+'</div>';
+  h += '<div class="cmeta"><span class="vtag">v'+(a.latest_version||1)+'</span><span class="cdate">'+date+'</span></div>';
+  h += '</div></div>';
+  return h;
+}
+
+function showFolderInput() { document.getElementById("finput-row").style.display="block"; document.getElementById("finput").focus(); }
+function handleFolderKey(e) { if(e.key==="Enter") saveFolder(); if(e.key==="Escape") hideFolderInput(); }
+async function saveFolder() {
+  var name = document.getElementById("finput").value.trim();
+  if (!name) { hideFolderInput(); return; }
+  await api("/api/folders", {method:"POST",body:JSON.stringify({name:name,parent_id:state.folderId})});
+  hideFolderInput();
+  await loadFolders();
+  renderGrid();
+}
+function hideFolderInput() { document.getElementById("finput-row").style.display="none"; document.getElementById("finput").value=""; }
+
+async function deleteF(id) {
+  if (!confirm("Delete this folder? Assets inside will move to root.")) return;
+  await api("/api/folders/"+id, {method:"DELETE"});
+  if (state.folderId===id) state.folderId = null;
+  await loadFolders();
+  loadAssets(state.folderId);
+}
+async function renameF(id) {
+  var folder = state.folders.find(function(f){ return f.id===id; });
+  var name = prompt("Rename:", folder?folder.name:"");
+  if (!name || name===(folder&&folder.name)) return;
+  await api("/api/folders/"+id, {method:"PUT",body:JSON.stringify({name:name})});
+  await loadFolders();
+  renderBreadcrumb();
+}
+
+async function deleteAssetCard(id) {
+  var asset = state.assets.find(function(a){ return a.id===id; });
+  if (!confirm('Delete "' + (asset?asset.base_name:"this asset") + '"? Cannot be undone.')) return;
+  await api("/api/assets/"+id, {method:"DELETE"});
+  loadAssets(state.folderId);
+}
+
+function moveAsset(assetId) {
+  moveAssetId = assetId;
+  var asset = state.assets.find(function(a){ return a.id===assetId; });
+  var list = document.getElementById("move-list");
+  var html = '<div class="move-opt'+(state.folderId===null?" cur":"")+'" onclick="submitMove('+assetId+',null)">📂 Root (no folder)</div>';
+  function addOpt(folder, depth) {
+    var isCur = asset && asset.folder_id === folder.id;
+    html += '<div class="move-opt'+(isCur?" cur":"")+'" style="padding-left:'+(14+depth*16)+'px" onclick="submitMove('+assetId+','+folder.id+')">📁 '+folder.name+'</div>';
+    state.folders.filter(function(f){ return f.parent_id===folder.id; }).forEach(function(c){ addOpt(c,depth+1); });
+  }
+  state.folders.filter(function(f){ return !f.parent_id; }).forEach(function(f){ addOpt(f,0); });
+  list.innerHTML = html;
+  document.getElementById("move-modal").style.display = "block";
+}
+
+function closeMoveModal() { document.getElementById("move-modal").style.display="none"; moveAssetId=null; }
+
+async function submitMove(assetId, folderId) {
+  await fetch("/api/assets/"+assetId, {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify({folder_id:folderId})});
+  closeMoveModal();
+  loadAssets(state.folderId);
+}
+
+// ── Asset Detail ─────────────────────────────────────────────────────────────
+async function openAsset(id) {
+  var versions = await api("/api/versions/"+id);
+  if (!versions.length) return;
+  var asset = state.assets.find(function(a){ return a.id===id; });
+  state.currentAsset = {id:id, versions:versions, asset:asset};
+  renderDetail(asset, versions[0]);
+  document.getElementById("grid-view").style.display = "none";
+  document.getElementById("detail-view").style.display = "flex";
+}
+
+function closeDetail() {
+  document.getElementById("video-player").pause();
+  document.getElementById("video-player").src = "";
+  document.getElementById("detail-view").style.display = "none";
+  document.getElementById("grid-view").style.display = "block";
+}
+
+function renderDetail(asset, version) {
+  var info = {};
+  try { if(version.asset_info) info=JSON.parse(version.asset_info); } catch(e){}
+  document.getElementById("detail-name").textContent = asset.base_name;
+  var sel = document.getElementById("version-select");
+  sel.innerHTML = state.currentAsset.versions.map(function(v){
+    return '<option value="'+v.id+'"'+(v.id===version.id?" selected":"")+'>v'+v.version_number+(v.is_latest?" (latest)":"")+'</option>';
+  }).join("");
+  var player = document.getElementById("video-player");
+  player.src = version.video_filename ? "/uploads/videos/"+version.video_filename : "";
+  player.load();
+  var tags = [];
+  if (info.brand) tags.push("🏷️ "+info.brand);
+  if (info.platform) tags.push("📱 "+info.platform);
+  if (info.company) tags.push("🏢 "+info.company);
+  if (info.date) tags.push("📅 "+info.date);
+  var mb = document.getElementById("detail-meta");
+  mb.innerHTML = tags.map(function(t){ return '<span class="meta-tag">'+t+'</span>'; }).join("");
+  mb.style.display = tags.length ? "flex" : "none";
+  renderScores(version);
+}
+
+async function switchVersion(versionId) {
+  var version = state.currentAsset.versions.find(function(v){ return v.id===parseInt(versionId); });
+  if (version) renderDetail(state.currentAsset.asset, version);
+}
+
+function renderScores(version) {
+  var el = document.getElementById("scores-content");
+  if (!version.kpi_data||!version.ace_score) { el.innerHTML='<div class="no-score">No Brainsuite report paired<br>with this version</div>'; return; }
+  var cats; try { cats=JSON.parse(version.kpi_data); } catch(e) { el.innerHTML='<div class="no-score">Could not read score data</div>'; return; }
+  var ace=version.ace_score, ac=ace>=67?"ace-green":ace>=34?"ace-amber":"ace-red", as=ace>=67?"Green":ace>=34?"Amber":"Red";
+  var html='<div class="ace-display '+ac+'"><div class="ace-num">'+ace+'</div><div class="ace-lbl">ACE Score</div><div class="ace-stat">'+as+'</div></div>';
+  html+='<div class="cats">';
+  Object.keys(cats).forEach(function(key){
+    var cat=cats[key], sum=cat.kpis.reduce(function(a,k){ return a+colorValues[k.original]; },0), score=Math.round(sum/cat.kpis.length);
+    var sc=score>=67?"cg":score>=34?"ca":"cr";
+    html+='<div class="cat-sec"><div class="cat-hdr" onclick="toggleCat(\''+key+'\')"><span class="cat-nm">'+cat.name+'</span><span class="cat-wt">×'+cat.weight+'</span><span class="cat-sc '+sc+'">'+score+'</span><span class="cat-chv" id="chev-'+key+'">▼</span></div>';
+    html+='<div class="cat-kpis" id="kpis-'+key+'" style="display:none">';
+    cat.kpis.forEach(function(kpi){ var bc=kpi.original==="green"?"kg":kpi.original==="amber"?"kam":"kred"; html+='<div class="kpi-row"><span class="kpi-nm">'+kpi.name+'</span><span class="kpi-badge '+bc+'">'+kpi.value+'</span></div>'; });
+    html+='</div></div>';
+  });
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+function toggleCat(key) {
+  var el=document.getElementById("kpis-"+key), chev=document.getElementById("chev-"+key), open=el.style.display==="none";
+  el.style.display=open?"block":"none"; chev.className="cat-chv"+(open?" open":"");
+}
+
+document.addEventListener("keydown", function(e){ if(e.key==="Escape"){ closeDetail(); closeUpload(); closeMoveModal(); } });
+document.getElementById("modal-overlay").addEventListener("click", function(e){ if(e.target===this) closeUpload(); });
+document.getElementById("move-overlay").addEventListener("click", function(e){ if(e.target===this) closeMoveModal(); });
+
+// ── Upload ───────────────────────────────────────────────────────────────────
+function showUpload() {
+  uploadFiles={video:null,pptx:null};
+  document.getElementById("video-fname").textContent="";
+  document.getElementById("pptx-fname").textContent="";
+  document.getElementById("upstatus").style.display="none";
+  document.getElementById("upload-submit").disabled=false;
+  document.getElementById("upload-modal").style.display="block";
+}
+function closeUpload() { document.getElementById("upload-modal").style.display="none"; }
+function filePicked(type,input) { if(!input.files[0]) return; uploadFiles[type]=input.files[0]; document.getElementById(type+"-fname").textContent="✓ "+input.files[0].name; }
+function dzOver(e,id) { e.preventDefault(); document.getElementById(id).classList.add("over"); }
+function dzOut(id) { document.getElementById(id).classList.remove("over"); }
+function dzDrop(e,type) {
+  e.preventDefault(); dzOut(type+"-dz");
+  var f=e.dataTransfer.files[0]; if(!f) return;
+  var ok=type==="video"?/\.(mp4|mov|avi|webm|mkv)$/i.test(f.name):/\.pptx$/i.test(f.name);
+  if(!ok){setStatus("Wrong file type for "+type,"error");return;}
+  uploadFiles[type]=f; document.getElementById(type+"-fname").textContent="✓ "+f.name;
+}
+function setStatus(msg,type) { var el=document.getElementById("upstatus"); el.style.display="block"; el.className="upstatus "+type; el.textContent=msg; }
+
+async function submitUpload() {
+  if(!uploadFiles.video){setStatus("Please select a video file","error");return;}
+  document.getElementById("upload-submit").disabled=true;
+  setStatus("Processing...","info");
+  var scoresJson=null,assetInfoJson=null,thumbnail=null,aceScore=null;
+  if(uploadFiles.pptx){
+    try{
+      setStatus("Parsing Brainsuite report...","info");
+      var parsed=await parsePPTX(uploadFiles.pptx);
+      aceScore=calcACE(parsed.categories); scoresJson=JSON.stringify(parsed.categories);
+      assetInfoJson=JSON.stringify(parsed.assetInfo); thumbnail=parsed.assetInfo.thumbnail||null;
+    }catch(err){console.error(err);setStatus("Could not parse PPTX — uploading video only","info");}
+  }
+  setStatus("Uploading...","info");
+  var form=new FormData();
+  form.append("video",uploadFiles.video);
+  if(uploadFiles.pptx) form.append("pptx",uploadFiles.pptx);
+  if(state.folderId) form.append("folder_id",state.folderId);
+  if(scoresJson) form.append("scores",scoresJson);
+  if(assetInfoJson) form.append("asset_info",assetInfoJson);
+  if(thumbnail) form.append("thumbnail",thumbnail);
+  if(aceScore!==null) form.append("ace_score",aceScore);
+  try{
+    var res=await fetch("/api/upload",{method:"POST",body:form});
+    var data=await res.json();
+    if(data.ok){setStatus("Uploaded! v"+data.version,"success");setTimeout(function(){closeUpload();loadAssets(state.folderId);},1200);}
+    else{setStatus("Error: "+(data.error||"Upload failed"),"error");document.getElementById("upload-submit").disabled=false;}
+  }catch(err){setStatus("Error: "+err.message,"error");document.getElementById("upload-submit").disabled=false;}
+}
+
+window.addEventListener("dragenter",function(e){
+  if (state.draggingAssetId) return;  
+  if(document.getElementById("upload-modal").style.display==="block"||document.getElementById("move-modal").style.display==="block") return;
+  dragCounter++; if(dragCounter===1) document.getElementById("drag-overlay").classList.add("active");
+});
+window.addEventListener("dragleave",function(){
+if (state.draggingAssetId) return; 
+dragCounter--; if(dragCounter<=0){dragCounter=0;document.getElementById("drag-overlay").classList.remove("active");} 
+});
+window.addEventListener("dragover",function(e){e.preventDefault();});
+window.addEventListener("drop",function(e){
+  e.preventDefault(); dragCounter=0; document.getElementById("drag-overlay").classList.remove("active");
+  if(document.getElementById("upload-modal").style.display==="block") return;
+  var files=Array.from(e.dataTransfer.files);
+  var video=files.find(function(f){return /\.(mp4|mov|avi|webm|mkv)$/i.test(f.name);});
+  var pptx=files.find(function(f){return /\.pptx$/i.test(f.name);});
+  if(!video&&!pptx) return;
+  showUpload();
+  if(video){uploadFiles.video=video;document.getElementById("video-fname").textContent="✓ "+video.name;}
+  if(pptx){uploadFiles.pptx=pptx;document.getElementById("pptx-fname").textContent="✓ "+pptx.name;}
+});
+document.getElementById("upload-btn").onclick=showUpload;
+
+// ── BrainSurgeon Parser ──────────────────────────────────────────────────────
+function calcACE(cats){var tw=0,ws=0;Object.keys(cats).forEach(function(k){var sum=cats[k].kpis.reduce(function(a,kpi){return a+colorValues[kpi.original];},0);ws+=(sum/cats[k].kpis.length)*cats[k].weight;tw+=cats[k].weight;});return Math.round(ws/tw);}
+function mkCats(){return JSON.parse(JSON.stringify({attention:{name:"Attention",weight:3,kpis:[{id:"att_1",name:"Engaging Beginning",type:"binary",original:"green",value:"✓",thresholds:null,hasAmber:false},{id:"att_2",name:"Scene Pace",type:"binary",original:"green",value:"✓",thresholds:null,hasAmber:false},{id:"att_3",name:"Scene Motion",type:"numeric",original:"green",value:75,thresholds:{red:33,amber:50},hasAmber:true}]},branding:{name:"Branding",weight:5,kpis:[{id:"bra_1",name:"Brand Cut-Through",type:"numeric",original:"red",value:19,thresholds:{red:25,amber:50},hasAmber:true},{id:"bra_2",name:"Brand CT First Seconds",type:"binary",original:"green",value:"✓",thresholds:null,hasAmber:false},{id:"bra_3",name:"Product Attention Over Time",type:"numeric",original:"red",value:0,thresholds:{red:5,amber:27},hasAmber:true},{id:"bra_4",name:"Product CT First Seconds",type:"binary",original:"red",value:"✗",thresholds:null,hasAmber:false}]},processing:{name:"Processing",weight:1,kpis:[{id:"pro_1",name:"Ad Recall Potential",type:"numeric",original:"green",value:94,thresholds:{red:33,amber:50},hasAmber:true},{id:"pro_2",name:"Visual Simplicity",type:"numeric",original:"green",value:81,thresholds:{red:33,amber:50},hasAmber:true},{id:"pro_3",name:"Ideal Aspect Ratio",type:"binary",original:"green",value:"✓",thresholds:null,hasAmber:false},{id:"pro_4",name:"Enough Time to Read",type:"numeric",original:"red",value:8,thresholds:{red:33,amber:50},hasAmber:true},{id:"pro_5",name:"Ideal Sound Setting",type:"binary",original:"green",value:"✓",thresholds:null,hasAmber:false}]},emotional:{name:"Emotional",weight:1,kpis:[{id:"emo_1",name:"Human Element",type:"numeric",original:"green",value:81,thresholds:{red:30,amber:70},hasAmber:true},{id:"emo_2",name:"Activation: Visual",type:"numeric",original:"green",value:81,thresholds:{red:33,amber:50},hasAmber:true},{id:"emo_3",name:"Activation: Text",type:"numeric",original:"green",value:83,thresholds:{red:25,amber:40},hasAmber:true}]},persuasion:{name:"Persuasion",weight:1,kpis:[{id:"per_1",name:"CTA Cut-Through",type:"binary",original:"red",value:"✗",thresholds:null,hasAmber:false},{id:"per_2",name:"Engagement Potential",type:"numeric",original:"amber",value:50,thresholds:{red:33,amber:50},hasAmber:true}]}}))}
+function exText(xml){var m=xml.match(/<a:t[^>]*>([^<]+)<\/a:t>/g);if(m)return m.map(function(x){return x.replace(/<[^>]+>/g,"");}).join(" ");return xml.replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim();}
+function exThresh(text){var p1=[/&lt;\s*(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)\s*&gt;\s*(\d+(?:\.\d+)?)/,/<\s*(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)\s*>\s*(\d+(?:\.\d+)?)/];for(var i=0;i<p1.length;i++){var m=text.match(p1[i]);if(m)return{red:parseFloat(m[1]),amber:parseFloat(m[3]),hasAmber:true};}var p2=[/&lt;\s*(\d+(?:\.\d+)?)\s*&gt;\s*(\d+(?:\.\d+)?)/,/<\s*(\d+(?:\.\d+)?)\s*>\s*(\d+(?:\.\d+)?)/];for(var j=0;j<p2.length;j++){var m2=text.match(p2[j]);if(m2)return{red:parseFloat(m2[1]),amber:null,hasAmber:false};}return null;}
+function detColor(val,t){if(!t)return val>0?"green":"red";if(t.hasAmber){if(val<t.red)return"red";if(val<=t.amber)return"amber";return"green";}return val>t.red?"green":"red";}
+
+async function parsePPTX(file){
+  var zip=await JSZip.loadAsync(file);
+  var thumbUrl,allText="",kpiOv="",slideTexts={},kpiData={},thresh={};
+  var tp=Object.keys(zip.files).find(function(p){return /ppt\/media\/image-4-1\.(png|jpg|jpeg)/i.test(p);});
+  if(tp){try{var d=await zip.file(tp).async("base64");var e=tp.split(".").pop().toLowerCase();thumbUrl="data:image/"+(e==="png"?"png":"jpeg")+";base64,"+d;}catch(e){}}
+  for(var path in zip.files){var mm=path.match(/ppt\/slides\/slide(\d+)\.xml/);if(mm){var content=await zip.file(path).async("string");var text=exText(content);slideTexts[mm[1]]=text;allText+=" "+text;if(/KPI Overview|Attention:.*Branding:.*Processing Ease:/i.test(text))kpiOv=text;}}
+  var nm=allText.match(/Asset Name:\s*([A-Za-z0-9_\s&;]+?)\s+Asset Stage/i);
+  var assetName=nm?nm[1].trim():"Unknown";
+  var tsm=allText.match(/Date:\s*(\d{1,2}\/\d{1,2}\/\d{4},\s*\d{1,2}:\d{2}\s*[AP]M)/i);
+  var assetDate=tsm?tsm[1]:null;
+  var company=(allText.match(/Which Company\?:\s*(\w+)/i)||[])[1]||null;
+  var brand=(allText.match(/Brand Name:\s*([^\n:]+?)(?=\s+(?:Voice-Over|Asset|File|Market|Date|Category))/i)||[])[1];if(brand)brand=brand.trim();
+  var pm=allText.match(/Scene pace is.*?(?:above|below) benchmark for\s+([A-Za-z0-9\s\-]+)/i);var platform=pm?pm[1].trim():null;
+  for(var sn in slideTexts){var st=slideTexts[sn];if(/KPI Overview/i.test(st))continue;if(/Scene Motion.*?motion score/i.test(st)&&!thresh.sm)thresh.sm=exThresh(st);if(/Brand Cut-Through\s+\d+.*?brand cut-through/i.test(st)&&!/First Seconds/i.test(st.substring(0,100))&&!thresh.bc)thresh.bc=exThresh(st);if(/Packaged Product Attention Over Time/i.test(st)&&!thresh.pt)thresh.pt=exThresh(st);if(/Ad Recall Potential.*?ad recall potential/i.test(st)&&!thresh.ar)thresh.ar=exThresh(st);if(/Visual Simplicity.*?visual simplicity/i.test(st)&&!thresh.vs)thresh.vs=exThresh(st);if(/Enough Time to Read.*?text on the screen/i.test(st)&&!thresh.rt)thresh.rt=exThresh(st);if(/Human Element.*?incorporates a person/i.test(st)&&!thresh.he)thresh.he=exThresh(st);if(/Activation Potential: Visual.*?of scenes, the visuals/i.test(st)&&!thresh.va)thresh.va=exThresh(st);if(/Activation Potential: Text.*?scenes with text/i.test(st)&&!thresh.ta)thresh.ta=exThresh(st);if(/Engagement Potential.*?engagement potential/i.test(st)&&!thresh.ep)thresh.ep=exThresh(st);}
+  function gv(rx){var m=kpiOv.match(rx);return m?parseInt(m[1]):undefined;}
+  kpiData.sm=gv(/(\d+)\s+Scene Motion/i);kpiData.bc=gv(/(\d+)\s+Brand Cut-Through(?!\s+in\s+First)/i);kpiData.pt=gv(/(\d+)\s+Packaged Product Attention Over Time/i);kpiData.ar=gv(/(\d+)\s+Ad Recall Potential/i);kpiData.vs=gv(/(\d+)\s+Visual Simplicity/i);kpiData.rt=gv(/(\d+)\s+Enough Time to Read/i);kpiData.he=gv(/(\d+)\s+Human Element/i);kpiData.va=gv(/(\d+)\s+Activation Potential:\s*Visual/i);kpiData.ta=gv(/(\d+)\s+Activation Potential:\s*Text/i);kpiData.ep=gv(/(\d+)\s+Engagement Potential/i);
+  var bin={eb:/Engaging Beginning.*?has enough movement/i.test(allText)&&!/has not enough movement/i.test(allText),sp:/Scene pace is.*?\d+\.?\d*\s+which is\s+above benchmark/i.test(allText),bf:/Brand Cut-Through in First Seconds.*?The brand attracts enough attention/i.test(allText),pf:/Packaged Product Cut-Through in First Seconds.*?The product attracts enough attention in the first \d+ seconds/i.test(allText),ar:/Ideal Aspect Ratio.*?The video respects the ideal aspect ratio/i.test(allText)&&!/does not respect/i.test(allText),so:/Ideal Sound Setting.*?The video respects the ideal audio settings/i.test(allText)&&!/does not respect/i.test(allText),ct:/Call-to-Action Cut-Through.*?Call-to-action cuts through above norm in none/i.test(allText)};
+  var cats=mkCats();
+  function applyT(kpi,t){if(t){kpi.thresholds=t;kpi.hasAmber=t.hasAmber;}}
+  applyT(cats.attention.kpis[2],thresh.sm);applyT(cats.branding.kpis[0],thresh.bc);applyT(cats.branding.kpis[2],thresh.pt);applyT(cats.processing.kpis[0],thresh.ar);applyT(cats.processing.kpis[1],thresh.vs);applyT(cats.processing.kpis[3],thresh.rt);applyT(cats.emotional.kpis[0],thresh.he);applyT(cats.emotional.kpis[1],thresh.va);applyT(cats.emotional.kpis[2],thresh.ta);applyT(cats.persuasion.kpis[1],thresh.ep);
+  function applyN(kpi,val){if(val!==undefined){kpi.value=val;kpi.original=detColor(val,kpi.thresholds);}}
+  applyN(cats.attention.kpis[2],kpiData.sm);applyN(cats.branding.kpis[0],kpiData.bc);applyN(cats.branding.kpis[2],kpiData.pt);applyN(cats.processing.kpis[0],kpiData.ar);applyN(cats.processing.kpis[1],kpiData.vs);applyN(cats.processing.kpis[3],kpiData.rt);applyN(cats.emotional.kpis[0],kpiData.he);applyN(cats.emotional.kpis[1],kpiData.va);applyN(cats.emotional.kpis[2],kpiData.ta);applyN(cats.persuasion.kpis[1],kpiData.ep);
+  function applyB(kpi,val){kpi.original=val?"green":"red";kpi.value=val?"✓":"✗";}
+  applyB(cats.attention.kpis[0],bin.eb);applyB(cats.attention.kpis[1],bin.sp);applyB(cats.branding.kpis[1],bin.bf);applyB(cats.branding.kpis[3],bin.pf);applyB(cats.processing.kpis[2],bin.ar);applyB(cats.processing.kpis[4],bin.so);
+  cats.persuasion.kpis[0].original=bin.ct?"red":"green";cats.persuasion.kpis[0].value=bin.ct?"✗":"✓";
+  return{categories:cats,assetInfo:{name:assetName,date:assetDate,company:company,brand:brand,platform:platform,thumbnail:thumbUrl}};
+}
+
+function cardDragStart(e, id) {
+state.draggingAssetId = id;
+e.dataTransfer.setData("assetId", id);
+e.dataTransfer.effectAllowed = "move";
+}
+function cardDragEnd() { state.draggingAssetId = null; }
+function folderDragOver(e, el) {
+if (!state.draggingAssetId) return;
+e.preventDefault();
+el.style.outline = "3px solid #6366f1";
+}
+function folderDragLeave(el) { el.style.outline = ""; }
+async function folderDrop(e, folderId) {
+e.preventDefault();
+folderDragLeave(e.currentTarget);
+if (!state.draggingAssetId) return;
+await submitMove(state.draggingAssetId, folderId);
+state.draggingAssetId = null;
+}
+
+async function generateVideoThumbnail(file) {
+return new Promise(function(resolve) {
+  var video = document.createElement("video");
+  var url = URL.createObjectURL(file);
+  video.muted = true;
+  video.playsInline = true;
+  video.preload = "metadata";
+  video.onloadedmetadata = function() {
+    video.currentTime = Math.min(1, video.duration * 0.1);
+  };
+  video.onseeked = function() {
+    try {
+      var canvas = document.createElement("canvas");
+      canvas.width = 320;
+      canvas.height = Math.round(320 * video.videoHeight / video.videoWidth) || 180;
+      canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL("image/jpeg", 0.7));
+    } catch(e) { URL.revokeObjectURL(url); resolve(null); }
+  };
+  video.onerror = function() { URL.revokeObjectURL(url); resolve(null); };
+  video.src = url;
+  video.load();
+});
+}
+
+loadFolders();
+loadAssets(null);
+</script>
 
 </body></html>
