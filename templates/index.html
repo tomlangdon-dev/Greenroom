@@ -1,0 +1,69 @@
+<html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Asset Manager</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 16px;
+            padding: 48px;
+            text-align: center;
+            max-width: 480px;
+            width: 90%;
+        }
+        .icon  { font-size: 56px; margin-bottom: 20px; }
+        h1     { font-size: 26px; font-weight: 700; margin-bottom: 8px; }
+        .sub   { color: #64748b; font-size: 14px; margin-bottom: 32px; }
+        .badge {
+            display: inline-block;
+            background: #10b981;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 28px;
+        }
+        .checklist {
+            text-align: left;
+            background: #0f172a;
+            border-radius: 10px;
+            padding: 20px 24px;
+            font-size: 14px;
+            line-height: 2.2;
+            color: #94a3b8;
+        }
+        .done  { color: #10b981; }
+        .next  { color: #f59e0b; }
+        .todo  { color: #475569; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="icon">🎬</div>
+        <h1>Video Asset Manager</h1>
+        <div class="sub">Local asset management for Brainsuite tests</div>
+        <div class="badge">✓ Stage 1 — Server Running</div>
+        <div class="checklist">
+            <span class="done">✅</span> Flask server<br>
+            <span class="done">✅</span> SQLite database<br>
+            <span class="done">✅</span> File storage folders<br>
+            <span class="next">⏳</span> Folders &amp; assets API<br>
+            <span class="todo">○ </span> Frontend layout<br>
+            <span class="todo">○ </span> Upload + PPTX parsing<br>
+            <span class="todo">○ </span> Video player + scores<br>
+        </div>
+    </div>
+
+</body></html>
