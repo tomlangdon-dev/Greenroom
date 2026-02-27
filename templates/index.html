@@ -186,6 +186,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .tag-suggestions{position:fixed;top:0;left:0;width:200px;background:white;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.1);z-index:3000;overflow:hidden;max-height:160px;overflow-y:auto;display:none}
 .tag-suggestion-item{padding:9px 14px;font-size:13px;cursor:pointer;transition:background .1s}
 .tag-suggestion-item:hover{background:#f5f3ff;color:#6366f1}
+.meta-edit-btn{background:none;border:1px solid #e2e8f0;border-radius:12px;padding:3px 10px;font-size:11px;cursor:pointer;color:#64748b;transition:all .15s;margin-left:auto;flex-shrink:0}
+.meta-edit-btn:hover{border-color:#6366f1;color:#6366f1}
 </style>
 </head>
 <body>
@@ -536,8 +538,16 @@ function renderDetail(asset,version){
   sel.innerHTML=state.currentAsset.versions.map(function(v){return'<option value="'+v.id+'"'+(v.id===version.id?" selected":"")+'>v'+v.version_number+(v.is_latest?" (latest)":"")+'</option>';}).join("");
   var player=document.getElementById("video-player");
   player.src=version.video_filename?"/uploads/videos/"+version.video_filename:"";player.load();
-  var tags=[];if(info.brand)tags.push("🏷️ "+info.brand);if(info.platform)tags.push("📱 "+info.platform);if(info.company)tags.push("🏢 "+info.company);if(info.date)tags.push("📅 "+info.date);
-  var mb=document.getElementById("detail-meta");mb.innerHTML=tags.map(function(t){return'<span class="meta-tag">'+t+'</span>';}).join("");mb.style.display=tags.length?"flex":"none";
+  var metaTags=[];
+if(asset.phase) metaTags.push(asset.phase);
+if(asset.platform) metaTags.push(asset.platform);
+if(asset.format) metaTags.push(asset.format);
+if(asset.is_master) metaTags.push('★ Master');
+try{JSON.parse(asset.audience_tags||'[]').forEach(function(t){metaTags.push(t);});}catch(e){}
+if(version.uploaded_at) metaTags.push(new Date(version.uploaded_at).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"}));
+var mb=document.getElementById("detail-meta");
+mb.innerHTML=metaTags.map(function(t){return'<span class="meta-tag">'+t+'</span>';}).join('')+'<button class="meta-edit-btn" onclick="editAssetTags()">✏️ Edit</button>';
+mb.style.display="flex";
   var btn=document.getElementById("add-report-btn");
   if(!btn){btn=document.createElement("button");btn.id="add-report-btn";btn.className="btn btn-ghost";btn.style.fontSize="12px";document.querySelector(".detail-hdr").appendChild(btn);}
   btn.textContent=version.kpi_data?"📊 Replace Report":"📊 Add Report";
@@ -636,12 +646,12 @@ hideSuggestions();
   document.getElementById("tag-modal").style.display="block";
 }
 
-function closeTagModal() {
-  var vid=document.getElementById("tag-video");
-  if(vid.src.startsWith("blob:"))URL.revokeObjectURL(vid.src);
-  vid.pause(); vid.src="";
-  document.getElementById("tag-modal").style.display="none";
-  loadFolders().then(function(){loadAssets(state.folderId);});
+function closeTagModal(){
+var vid=document.getElementById("tag-video");
+if(vid.src.startsWith("blob:"))URL.revokeObjectURL(vid.src);
+vid.pause();vid.src="";
+document.getElementById("tag-modal").style.display="none";
+loadFolders().then(function(){loadAssets(state.folderId);});
 }
 
 function getFolderContext(folderId,projectId){
@@ -698,13 +708,30 @@ function hideSuggestions(){document.getElementById("tag-suggestions").style.disp
 function validateTagForm(){document.getElementById("tag-confirm").disabled=!(tagState.phase&&tagState.platform);}
 
 async function submitTags(skip){
-  if(skip){closeTagModal();return;}
-  var leftover = document.getElementById("tag-text-input").value.trim();
-if (leftover) addAudienceTag(leftover);
-  var displayName=document.getElementById("tag-display-name").value.trim();
-  var payload={display_name:displayName!==tagState.baseName?displayName:null,phase:tagState.phase,platform:tagState.platform,format:tagState.format||null,is_master:tagState.isMaster?1:0,audience_tags:tagState.audienceTags,project_id:tagState.projectId};
-  var res=await api("/api/assets/"+tagState.assetId+"/tags",{method:"PUT",body:JSON.stringify(payload)});
-  if(res.ok)closeTagModal();
+if(skip){closeTagModal();return;}
+var leftover=document.getElementById("tag-text-input").value.trim();
+if(leftover)addAudienceTag(leftover);
+var displayName=document.getElementById("tag-display-name").value.trim();
+var payload={display_name:displayName!==tagState.baseName?displayName:null,phase:tagState.phase,platform:tagState.platform,format:tagState.format||null,is_master:tagState.isMaster?1:0,audience_tags:tagState.audienceTags,project_id:tagState.projectId};
+var res=await api("/api/assets/"+tagState.assetId+"/tags",{method:"PUT",body:JSON.stringify(payload)});
+if(!res.ok)return;
+var vid=document.getElementById("tag-video");
+if(vid.src.startsWith("blob:"))URL.revokeObjectURL(vid.src);
+vid.pause();vid.src="";
+document.getElementById("tag-modal").style.display="none";
+var savedId=tagState.assetId;
+var inDetail=document.getElementById("detail-view").style.display!=="none";
+await loadFolders();
+if(res.folder_id) state.folderId=res.folder_id;
+state.assets=await api(state.folderId?"/api/assets?folder_id="+state.folderId:"/api/assets");
+renderSidebar();
+renderBreadcrumb();
+if(inDetail&&savedId){
+  var updated=state.assets.find(function(a){return a.id===savedId;});
+  if(updated&&state.currentAsset){state.currentAsset.asset=updated;renderDetail(updated,state.currentAsset.versions[0]);}
+} else {
+  renderGrid();
+}
 }
 
 window.addEventListener("dragenter",function(e){if(state.draggingAssetId)return;if(document.getElementById("upload-modal").style.display==="block"||document.getElementById("move-modal").style.display==="block"||document.getElementById("report-modal").style.display==="block"||document.getElementById("tag-modal").style.display==="block")return;if(!e.dataTransfer||!Array.from(e.dataTransfer.types||[]).includes("Files"))return;dragCounter++;if(dragCounter===1)document.getElementById("drag-overlay").classList.add("active");});
@@ -734,6 +761,37 @@ function detColor(val,t){if(!t)return val>0?"green":"red";if(t.hasAmber){if(val<
 async function parsePPTX(file){var zip=await JSZip.loadAsync(file);var thumbUrl,allText="",kpiOv="",slideTexts={},kpiData={},thresh={};var tp=Object.keys(zip.files).find(function(p){return /ppt\/media\/image-4-1\.(png|jpg|jpeg)/i.test(p);});if(tp){try{var d=await zip.file(tp).async("base64");var e=tp.split(".").pop().toLowerCase();thumbUrl="data:image/"+(e==="png"?"png":"jpeg")+";base64,"+d;}catch(e){}}for(var path in zip.files){var mm=path.match(/ppt\/slides\/slide(\d+)\.xml/);if(mm){var content=await zip.file(path).async("string");var text=exText(content);slideTexts[mm[1]]=text;allText+=" "+text;if(/KPI Overview|Attention:.*Branding:.*Processing Ease:/i.test(text))kpiOv=text;}}var nm=allText.match(/Asset Name:\s*([A-Za-z0-9_\s&;]+?)\s+Asset Stage/i);var assetName=nm?nm[1].trim():"Unknown";var tsm=allText.match(/Date:\s*(\d{1,2}\/\d{1,2}\/\d{4},\s*\d{1,2}:\d{2}\s*[AP]M)/i);var assetDate=tsm?tsm[1]:null;var company=(allText.match(/Which Company\?:\s*(\w+)/i)||[])[1]||null;var brand=(allText.match(/Brand Name:\s*([^\n:]+?)(?=\s+(?:Voice-Over|Asset|File|Market|Date|Category))/i)||[])[1];if(brand)brand=brand.trim();var pm=allText.match(/Scene pace is.*?(?:above|below) benchmark for\s+([A-Za-z0-9\s\-]+)/i);var platform=pm?pm[1].trim():null;for(var sn in slideTexts){var st=slideTexts[sn];if(/KPI Overview/i.test(st))continue;if(/Scene Motion.*?motion score/i.test(st)&&!thresh.sm)thresh.sm=exThresh(st);if(/Brand Cut-Through\s+\d+.*?brand cut-through/i.test(st)&&!/First Seconds/i.test(st.substring(0,100))&&!thresh.bc)thresh.bc=exThresh(st);if(/Packaged Product Attention Over Time/i.test(st)&&!thresh.pt)thresh.pt=exThresh(st);if(/Ad Recall Potential.*?ad recall potential/i.test(st)&&!thresh.ar)thresh.ar=exThresh(st);if(/Visual Simplicity.*?visual simplicity/i.test(st)&&!thresh.vs)thresh.vs=exThresh(st);if(/Enough Time to Read.*?text on the screen/i.test(st)&&!thresh.rt)thresh.rt=exThresh(st);if(/Human Element.*?incorporates a person/i.test(st)&&!thresh.he)thresh.he=exThresh(st);if(/Activation Potential: Visual.*?of scenes, the visuals/i.test(st)&&!thresh.va)thresh.va=exThresh(st);if(/Activation Potential: Text.*?scenes with text/i.test(st)&&!thresh.ta)thresh.ta=exThresh(st);if(/Engagement Potential.*?engagement potential/i.test(st)&&!thresh.ep)thresh.ep=exThresh(st);}function gv(rx){var m=kpiOv.match(rx);return m?parseInt(m[1]):undefined;}kpiData.sm=gv(/(\d+)\s+Scene Motion/i);kpiData.bc=gv(/(\d+)\s+Brand Cut-Through(?!\s+in\s+First)/i);kpiData.pt=gv(/(\d+)\s+Packaged Product Attention Over Time/i);kpiData.ar=gv(/(\d+)\s+Ad Recall Potential/i);kpiData.vs=gv(/(\d+)\s+Visual Simplicity/i);kpiData.rt=gv(/(\d+)\s+Enough Time to Read/i);kpiData.he=gv(/(\d+)\s+Human Element/i);kpiData.va=gv(/(\d+)\s+Activation Potential:\s*Visual/i);kpiData.ta=gv(/(\d+)\s+Activation Potential:\s*Text/i);kpiData.ep=gv(/(\d+)\s+Engagement Potential/i);var bin={eb:/Engaging Beginning.*?has enough movement/i.test(allText)&&!/has not enough movement/i.test(allText),sp:/Scene pace is.*?\d+\.?\d*\s+which is\s+above benchmark/i.test(allText),bf:/Brand Cut-Through in First Seconds.*?The brand attracts enough attention/i.test(allText),pf:/Packaged Product Cut-Through in First Seconds.*?The product attracts enough attention in the first \d+ seconds/i.test(allText),ar:/Ideal Aspect Ratio.*?The video respects the ideal aspect ratio/i.test(allText)&&!/does not respect/i.test(allText),so:/Ideal Sound Setting.*?The video respects the ideal audio settings/i.test(allText)&&!/does not respect/i.test(allText),ct:/Call-to-Action Cut-Through.*?Call-to-action cuts through above norm in none/i.test(allText)};var cats=mkCats();function applyT(kpi,t){if(t){kpi.thresholds=t;kpi.hasAmber=t.hasAmber;}}applyT(cats.attention.kpis[2],thresh.sm);applyT(cats.branding.kpis[0],thresh.bc);applyT(cats.branding.kpis[2],thresh.pt);applyT(cats.processing.kpis[0],thresh.ar);applyT(cats.processing.kpis[1],thresh.vs);applyT(cats.processing.kpis[3],thresh.rt);applyT(cats.emotional.kpis[0],thresh.he);applyT(cats.emotional.kpis[1],thresh.va);applyT(cats.emotional.kpis[2],thresh.ta);applyT(cats.persuasion.kpis[1],thresh.ep);function applyN(kpi,val){if(val!==undefined){kpi.value=val;kpi.original=detColor(val,kpi.thresholds);}}applyN(cats.attention.kpis[2],kpiData.sm);applyN(cats.branding.kpis[0],kpiData.bc);applyN(cats.branding.kpis[2],kpiData.pt);applyN(cats.processing.kpis[0],kpiData.ar);applyN(cats.processing.kpis[1],kpiData.vs);applyN(cats.processing.kpis[3],kpiData.rt);applyN(cats.emotional.kpis[0],kpiData.he);applyN(cats.emotional.kpis[1],kpiData.va);applyN(cats.emotional.kpis[2],kpiData.ta);applyN(cats.persuasion.kpis[1],kpiData.ep);function applyB(kpi,val){kpi.original=val?"green":"red";kpi.value=val?"✓":"✗";}applyB(cats.attention.kpis[0],bin.eb);applyB(cats.attention.kpis[1],bin.sp);applyB(cats.branding.kpis[1],bin.bf);applyB(cats.branding.kpis[3],bin.pf);applyB(cats.processing.kpis[2],bin.ar);applyB(cats.processing.kpis[4],bin.so);cats.persuasion.kpis[0].original=bin.ct?"red":"green";cats.persuasion.kpis[0].value=bin.ct?"✗":"✓";return{categories:cats,assetInfo:{name:assetName,date:assetDate,company:company,brand:brand,platform:platform,thumbnail:thumbUrl}};}
 
 async function init(){await loadFolders();showHome();}
+
+async function refreshAssetsData(){
+var url=state.folderId?"/api/assets?folder_id="+state.folderId:"/api/assets";
+state.assets=await api(url);
+}
+
+function editAssetTags(){
+var asset=state.currentAsset.asset;
+var version=state.currentAsset.versions.find(function(v){return v.is_latest;})||state.currentAsset.versions[0];
+tagState.assetId=asset.id;
+tagState.baseName=asset.base_name;
+tagState.projectId=state.projectId;
+tagState.phase=asset.phase||null;
+tagState.platform=asset.platform||null;
+tagState.format=asset.format||null;
+tagState.isMaster=!!asset.is_master;
+try{tagState.audienceTags=JSON.parse(asset.audience_tags||'[]');}catch(e){tagState.audienceTags=[];}
+var vid=document.getElementById("tag-video");
+vid.src=version.video_filename?"/uploads/videos/"+version.video_filename:"";
+vid.load();vid.play().catch(function(){});
+document.getElementById("tag-display-name").value=asset.display_name||asset.base_name;
+document.getElementById("tag-master").checked=!!asset.is_master;
+document.getElementById("tag-text-input").value="";
+hideSuggestions();
+api("/api/tags?project_id="+state.projectId).then(function(tags){tagState.suggestions=tags||[];});
+renderTagPills();
+renderAudienceTags();
+validateTagForm();
+document.getElementById("tag-modal").style.display="block";
+}
+
 init();
 </script>
 
