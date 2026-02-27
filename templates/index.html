@@ -290,7 +290,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 
 <div id="ctx-menu">
 <div class="ctx-item" onclick="addReportFromCtx();hideCtx()">📊 Add Report</div>
-<div class="ctx-item" onclick="hideCtx();moveAsset(ctxId)">📁 Move to folder...</div>
+<div class="ctx-item" onclick="var id=ctxId;hideCtx();moveAsset(id)">📁 Move to folder...</div>
 <div class="ctx-item ctx-danger" onclick="var id=ctxId;hideCtx();deleteAssetCard(id)">🗑 Delete</div>
 </div>
 
