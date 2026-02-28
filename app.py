@@ -24,22 +24,48 @@ def serve_video(filename):
 @app.route("/api/folders", methods=["GET"])
 def get_folders():
     conn = get_db()
-    rows = conn.execute("SELECT * FROM folders ORDER BY name").fetchall()
+    rows = conn.execute("SELECT * FROM folders ORDER BY id").fetchall()
     conn.close()
     return jsonify([dict(r) for r in rows])
 
 @app.route("/api/folders", methods=["POST"])
 def create_folder():
-    data = request.get_json()
-    name = data.get("name", "").strip()
-    parent_id = data.get("parent_id")
-    if not name: return jsonify({"error": "Name required"}), 400
-    conn = get_db()
-    cur = conn.execute("INSERT INTO folders (name, parent_id) VALUES (?, ?)", (name, parent_id))
-    conn.commit()
-    fid = cur.lastrowid
-    conn.close()
-    return jsonify({"id": fid, "name": name, "parent_id": parent_id}), 201
+  data = request.get_json()
+  name = data.get("name", "").strip()
+  parent_id = data.get("parent_id")
+  is_managed = 1 if data.get("is_managed") else 0
+  brainsuite_test = data.get("brainsuite_test")
+  cta = data.get("cta")
+  file_type = data.get("file_type", "video")
+  if not name:
+      return jsonify({"error": "Name required"}), 400
+  conn = get_db()
+  cur = conn.execute(
+      "INSERT INTO folders (name, parent_id, is_managed, brainsuite_test, cta, file_type) VALUES (?,?,?,?,?,?)",
+      (name, parent_id, is_managed, brainsuite_test, cta, file_type)
+  )
+  conn.commit()
+  fid = cur.lastrowid
+  conn.close()
+  return jsonify({"id": fid, "name": name, "parent_id": parent_id, "is_managed": is_managed}), 201
+
+@app.route("/api/folders/<int:fid>/config", methods=["GET"])
+def get_project_config(fid):
+  conn = get_db()
+  row = conn.execute("SELECT config FROM folders WHERE id=?", (fid,)).fetchone()
+  conn.close()
+  if row and row["config"]:
+      return jsonify(json.loads(row["config"]))
+  return jsonify({})
+
+@app.route("/api/folders/<int:fid>/config", methods=["PUT"])
+def save_project_config(fid):
+  data = request.get_json()
+  conn = get_db()
+  conn.execute("UPDATE folders SET config=? WHERE id=?", (json.dumps(data.get("config", {})), fid))
+  conn.commit()
+  conn.close()
+  return jsonify({"ok": True})
 
 @app.route("/api/folders/<int:fid>", methods=["PUT"])
 def rename_folder(fid):
@@ -95,7 +121,7 @@ def get_assets():
     folder_id = request.args.get("folder_id")
     project_id = request.args.get("project_id")
     conn = get_db()
-    base_q = "SELECT a.id, a.base_name, a.display_name, a.phase, a.platform, a.format, a.is_master, a.audience_tags, a.folder_id, a.created_at, v.ace_score, v.asset_info, v.thumbnail, v.uploaded_at, v.version_number as latest_version, v.id as latest_version_id, v.video_filename FROM assets a LEFT JOIN versions v ON v.asset_id = a.id AND v.is_latest = 1"
+    base_q = "SELECT a.id, a.base_name, a.display_name, a.phase, a.platform, a.format, a.is_master, a.audience_tags, a.folder_id, a.created_at, v.ace_score, v.asset_info, v.thumbnail, v.uploaded_at, v.version_number as latest_version, v.id as latest_version_id, v.video_filename, v.duration FROM assets a LEFT JOIN versions v ON v.asset_id = a.id AND v.is_latest = 1"
     if project_id:
         pf = "WITH RECURSIVE pf AS (SELECT id FROM folders WHERE id = ? UNION ALL SELECT f.id FROM folders f INNER JOIN pf ON f.parent_id = pf.id) "
         rows = conn.execute(pf + base_q + " WHERE a.folder_id IN (SELECT id FROM pf) ORDER BY a.base_name", (project_id,)).fetchall()
@@ -130,30 +156,23 @@ def update_asset(aid):
 
 @app.route("/api/assets/<int:aid>/tags", methods=["PUT"])
 def update_tags(aid):
-    data = request.get_json()
-    display_name = data.get("display_name")
-    phase = data.get("phase")
-    platform = data.get("platform")
-    fmt = data.get("format")
-    is_master = 1 if data.get("is_master") else 0
-    audience_tags = json.dumps(data.get("audience_tags", []))
-    project_id = data.get("project_id")
-    conn = get_db()
-    new_folder_id = None
-    if project_id and phase and platform:
-        def find_or_create(name, parent_id):
-            r = conn.execute("SELECT id FROM folders WHERE name=? AND parent_id=?", (name, parent_id)).fetchone()
-            if r: return r["id"]
-            cur = conn.execute("INSERT INTO folders (name, parent_id) VALUES (?,?)", (name, parent_id))
-            conn.commit()
-            return cur.lastrowid
-        phase_id = find_or_create(phase, project_id)
-        plat_id = find_or_create(platform, phase_id)
-        new_folder_id = find_or_create(fmt, plat_id) if fmt else plat_id
-    conn.execute("UPDATE assets SET display_name=?,phase=?,platform=?,format=?,is_master=?,audience_tags=?,folder_id=? WHERE id=?", (display_name, phase, platform, fmt, is_master, audience_tags, new_folder_id, aid))
-    conn.commit()
-    conn.close()
-    return jsonify({"ok": True, "folder_id": new_folder_id})
+  data = request.get_json()
+  display_name = data.get("display_name")
+  phase = data.get("phase")
+  platform = data.get("platform")
+  fmt = data.get("format")
+  is_master = 1 if data.get("is_master") else 0
+  audience_tags = json.dumps(data.get("audience_tags", []))
+  content_origin = data.get("content_origin", "Brand")
+  language = data.get("language")
+  conn = get_db()
+  conn.execute(
+      "UPDATE assets SET display_name=?, phase=?, platform=?, format=?, is_master=?, audience_tags=?, content_origin=?, language=? WHERE id=?",
+      (display_name, phase, platform, fmt, is_master, audience_tags, content_origin, language, aid)
+  )
+  conn.commit()
+  conn.close()
+  return jsonify({"ok": True})
 
 @app.route("/api/tags")
 def get_tags():
@@ -195,6 +214,7 @@ def upload():
     asset_info_json = request.form.get("asset_info")
     thumbnail = request.form.get("thumbnail")
     ace_score = request.form.get("ace_score")
+    duration = request.form.get("duration")
     video = request.files.get("video")
     pptx = request.files.get("pptx")
     if not video: return jsonify({"error": "Video required"}), 400
@@ -224,7 +244,7 @@ def upload():
         cur = conn.execute("INSERT INTO assets (folder_id, base_name) VALUES (?, ?)", (folder_id, base_name))
         asset_id = cur.lastrowid
         version_number = 1
-    conn.execute("INSERT INTO versions (asset_id, version_number, video_filename, video_path, pptx_filename, pptx_path, ace_score, kpi_data, asset_info, thumbnail, is_latest) VALUES (?,?,?,?,?,?,?,?,?,?,1)", (asset_id, version_number, vid_filename, vid_path, pptx_filename, pptx_path, ace_score, scores_json, asset_info_json, thumbnail))
+    conn.execute("INSERT INTO versions (asset_id, version_number, video_filename, video_path, pptx_filename, pptx_path, ace_score, kpi_data, asset_info, thumbnail, duration, is_latest) VALUES (?,?,?,?,?,?,?,?,?,?,?,1)", (asset_id, version_number, vid_filename, vid_path, pptx_filename, pptx_path, ace_score, scores_json, asset_info_json, thumbnail, duration))
     conn.commit()
     conn.close()
     return jsonify({"ok": True, "asset_id": asset_id, "version": version_number}), 201
@@ -234,7 +254,6 @@ def add_report(vid):
     pptx = request.files.get("pptx")
     scores_json = request.form.get("scores")
     asset_info_json = request.form.get("asset_info")
-    thumbnail = request.form.get("thumbnail")
     ace_score = request.form.get("ace_score")
     pptx_filename = pptx_path = None
     if pptx:
@@ -244,7 +263,7 @@ def add_report(vid):
         pptx_path = os.path.join(PPTX_DIR, pptx_filename)
         pptx.save(pptx_path)
     conn = get_db()
-    conn.execute("UPDATE versions SET pptx_filename=?, pptx_path=?, ace_score=?, kpi_data=?, asset_info=?, thumbnail=? WHERE id=?", (pptx_filename, pptx_path, ace_score, scores_json, asset_info_json, thumbnail, vid))
+    conn.execute("UPDATE versions SET pptx_filename=?, pptx_path=?, ace_score=?, kpi_data=?, asset_info=? WHERE id=?", (pptx_filename, pptx_path, ace_score, scores_json, asset_info_json, vid))
     conn.commit()
     conn.close()
     return jsonify({"ok": True})

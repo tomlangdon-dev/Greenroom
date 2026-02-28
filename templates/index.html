@@ -15,6 +15,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .bc-sep{color:#cbd5e0;margin:0 4px;font-size:11px}
 .btn{padding:8px 14px;border-radius:6px;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s}
 .btn-primary{background:#6366f1;color:white}.btn-primary:hover{background:#4f46e5}
+.btn-primary:disabled{background:#cbd5e1;color:#94a3b8;cursor:not-allowed;opacity:1}
 .btn-ghost{background:transparent;color:#64748b;border:1px solid #e2e8f0}.btn-ghost:hover{background:#f1f5f9}
 .body{display:flex;flex:1;overflow:hidden}
 #home-view{flex:1;overflow-y:auto;display:none}
@@ -187,7 +188,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .ctx-item{padding:9px 14px;font-size:13px;cursor:pointer;border-radius:5px;color:#1e293b;transition:background .1s}
 .ctx-item:hover{background:#f1f5f9}
 .ctx-danger{color:#ef4444}.ctx-danger:hover{background:#fef2f2}
-.tag-modal-inner{display:flex;background:white;border-radius:12px;overflow:hidden;max-width:780px;width:95%;max-height:88vh;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.tag-modal-inner{display:flex;background:white;border-radius:12px;overflow:hidden;max-width:780px;width:90%;max-height:88vh;box-shadow:0 20px 60px rgba(0,0,0,.3);margin:20px}
 .tag-video-panel{width:280px;flex-shrink:0;background:#000;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .tag-video-panel video{width:100%;height:100%;object-fit:contain}
 .tag-form-panel{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
@@ -232,6 +233,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .logo, .ov-proj-name, .home-title, .pc-name {
 font-family: 'Figtree', sans-serif;
 }
+.cdur{font-size:11px;color:#94a3b8;margin-left:auto}
 </style>
 </head>
 <body>
@@ -351,39 +353,53 @@ font-family: 'Figtree', sans-serif;
       <div class="tag-video-panel"><video id="tag-video" muted="" loop="" playsinline=""></video></div>
       <div class="tag-form-panel">
         <div class="tag-form-hdr"><h2>Tag Asset</h2><button class="modal-close" onclick="submitTags(true)">×</button></div>
-        <div class="tag-form-body">
-          <div class="tag-section">
-            <div class="tag-label">Display Name</div>
-            <input type="text" id="tag-display-name" class="tag-name-input" placeholder="Asset name...">
+<div class="tag-form-body">
+<div id="tag-test-banner" style="display:none;background:#f0f9ff;color:#0369a1;padding:10px 14px;border-radius:8px;font-size:12px;font-weight:500;margin-bottom:16px"></div>
+
+<div class="tag-section">
+          <div class="tag-label">Display Name</div>
+          <input type="text" id="tag-display-name" class="tag-name-input" placeholder="Asset name...">
+        </div>
+        
+        <div class="tag-section" id="tag-section-phase">
+          <div class="tag-label">Phase <span class="tag-required">*</span></div>
+          <div class="pill-group" id="tag-phases"></div>
+        </div>
+        
+        <div class="tag-section" id="tag-section-platform">
+          <div class="tag-label">Platform <span class="tag-required">*</span></div>
+          <div class="pill-group" id="tag-platforms"></div>
+        </div>
+        
+        <div class="tag-section" id="tag-section-format">
+          <div class="tag-label">Format <span style="color:#cbd5e0;font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">optional</span></div>
+          <div class="pill-group" id="tag-formats"></div>
+        </div>
+        
+        <div class="tag-section" id="tag-section-content-origin">
+          <div class="tag-label">Content Origin</div>
+          <div class="pill-group" id="tag-content-origin"></div>
+        </div>
+        
+        <div class="tag-section" id="tag-section-language" style="display:none">
+          <div class="tag-label">Language</div>
+          <div class="pill-group" id="tag-language"></div>
+        </div>
+        
+        <div class="tag-section">
+          <div class="toggle-row">
+            <div><div class="toggle-label">Master Asset</div><div class="toggle-sub">Only masters should require testing</div></div>
+            <label class="toggle">
+              <input type="checkbox" id="tag-master" onchange="tagState.isMaster=this.checked">
+              <span class="toggle-slider"></span>
+            </label>
           </div>
-          <div class="tag-section">
-            <div class="tag-label">Phase <span class="tag-required">*</span></div>
-            <div class="pill-group" id="tag-phases"></div>
-          </div>
-          <div class="tag-section">
-            <div class="tag-label">Platform <span class="tag-required">*</span></div>
-            <div class="pill-group" id="tag-platforms"></div>
-          </div>
-          <div class="tag-section">
-            <div class="tag-label">Format <span style="color:#cbd5e0;font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">optional</span></div>
-            <div class="pill-group" id="tag-formats"></div>
-          </div>
-          <div class="tag-section">
-            <div class="toggle-row">
-              <div><div class="toggle-label">Master Asset</div><div class="toggle-sub">Only masters should require testing</div></div>
-              <label class="toggle">
-                <input type="checkbox" id="tag-master" onchange="tagState.isMaster=this.checked">
-                <span class="toggle-slider"></span>
-              </label>
-            </div>
-          </div>
-          <div class="tag-section" style="position:relative">
-            <div class="tag-label">Audience Tags <span style="color:#cbd5e0;font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">optional</span></div>
-            <div class="tag-input-wrap" id="tag-input-wrap" onclick="document.getElementById('tag-text-input').focus()">
-              <input type="text" id="tag-text-input" class="tag-text-input" placeholder="Type and press Enter to add..." onkeydown="handleTagKeydown(event)" oninput="handleTagInput(event)" onblur="setTimeout(hideSuggestions,150)">
-            </div>
-            <div id="tag-suggestions" class="tag-suggestions" style="display:none"></div>
-          </div>
+        </div>
+        
+        <div class="tag-section">
+<div class="tag-label">Audience <span style="color:#cbd5e0;font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">optional</span></div>
+<div class="pill-group" id="tag-audience-pills"></div>
+</div>
         </div>
         <div class="tag-form-ftr">
           <button class="btn btn-ghost" onclick="submitTags(true)">Skip for now</button>
@@ -403,9 +419,90 @@ font-family: 'Figtree', sans-serif;
   <div class="ctx-item" onclick="renameProjCtx();hideProjCtx()">✏️ Rename project</div>
   <div class="ctx-item ctx-danger" onclick="deleteProjCtx();hideProjCtx()">🗑 Delete project</div>
 </div>
+<div id="project-setup-modal" style="display:none">
+<div class="modal-overlay">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-hdr">
+      <h2 id="ps-modal-title">New Project Setup</h2>
+      <button class="modal-close" onclick="closeProjectSetup()">×</button>
+    </div>
+    <div class="modal-body" style="max-height:520px;overflow-y:auto">
+      
+      <!-- Step 1: Identity -->
+      <div id="ps-step-1" style="display:none">
+        <div class="tag-section">
+          <div class="tag-label">Project Name <span class="tag-required">*</span></div>
+          <input type="text" id="ps-name" class="tag-name-input" placeholder="Campaign name...">
+        </div>
+        <div class="tag-section">
+          <div class="tag-label">Company <span class="tag-required">*</span></div>
+          <div class="pill-group" id="ps-company"></div>
+        </div>
+        <div class="tag-section">
+          <div class="tag-label">Brand <span class="tag-required">*</span></div>
+          <input type="text" id="ps-brand" class="tag-name-input" placeholder="Brand name...">
+        </div>
+        <div class="tag-section">
+          <div class="tag-label">Market <span class="tag-required">*</span></div>
+          <input type="text" id="ps-market" class="tag-name-input" placeholder="e.g. USA, UK...">
+        </div>
+        <div class="tag-section">
+          <div class="tag-label">Business Group</div>
+          <input type="text" id="ps-bg" class="tag-name-input" placeholder="e.g. Personal Care...">
+        </div>
+        <div class="tag-section">
+          <div class="tag-label">Category</div>
+          <input type="text" id="ps-category" class="tag-name-input" placeholder="e.g. Deodorants...">
+        </div>
+        <div class="tag-section">
+          <div class="tag-label">Default Language <span class="tag-required">*</span></div>
+          <input type="text" id="ps-lang" class="tag-name-input" value="English">
+        </div>
+        <div class="tag-section">
+          <div class="tag-label">Additional Languages <span style="color:#cbd5e0;font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">optional</span></div>
+          <div class="tag-input-wrap" id="ps-addlang-wrap" onclick="document.getElementById('ps-addlang-input').focus()">
+            <input type="text" id="ps-addlang-input" class="tag-text-input" placeholder="Type and press Enter..." onkeydown="psAddLangKey(event)">
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Organisation -->
+      <div id="ps-step-2" style="display:none">
+        <div class="tag-section">
+          <div class="tag-label">Phases <span class="tag-required">*</span></div>
+          <div class="pill-group" id="ps-phases-pills"></div>
+          <input type="text" id="ps-phase-input" class="tag-name-input" placeholder="+ Add custom phase..." style="margin-top:8px" onkeydown="psAddPhaseKey(event)">
+        </div>
+        <div class="tag-section">
+          <div class="tag-label">Audiences <span style="color:#cbd5e0;font-weight:400;text-transform:none;letter-spacing:0;font-size:10px">optional</span></div>
+          <div class="tag-input-wrap" id="ps-audience-wrap" onclick="document.getElementById('ps-audience-input').focus()">
+            <input type="text" id="ps-audience-input" class="tag-text-input" placeholder="Type and press Enter..." onkeydown="psAddAudienceKey(event)">
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Channels -->
+      <div id="ps-step-3" style="display:none">
+        <div id="ps-channels-container"></div>
+      </div>
+
+    </div>
+    <div class="modal-ftr" style="justify-content:space-between">
+      <button class="btn btn-ghost" id="ps-back-btn" onclick="psStepBack()" style="display:none">← Back</button>
+      <div style="display:flex;gap:8px;margin-left:auto">
+        <button class="btn btn-ghost" onclick="closeProjectSetup()">Cancel</button>
+        <button class="btn btn-primary" id="ps-next-btn" onclick="psStepNext()">Next →</button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
 <div id="folder-ctx-menu">
   <div class="ctx-item" onclick="folderCtxRename();hideFolderCtx()">✏️ Rename</div>
   <div class="ctx-item ctx-danger" onclick="folderCtxDelete();hideFolderCtx()">🗑 Delete</div>
+</div>
+<div id="managed-folder-ctx-menu" style="position:fixed;background:white;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.15);border:1px solid #e2e8f0;padding:4px;z-index:2000;min-width:160px;display:none">
+<div class="ctx-item" onclick="editViaProjectSettings();hideManagedFolderCtx()">⚙️ Edit via Project Settings</div>
 </div>
 
 <script>
@@ -461,7 +558,9 @@ function renderHome() {
   grid.querySelectorAll(".project-card").forEach(function(card){ card.addEventListener("contextmenu",function(e){e.preventDefault();showProjCtx(e,parseInt(card.dataset.id));}); });
 }
 
-async function newProject() { var name=prompt("Project name:"); if(!name||!name.trim()) return; await api("/api/folders",{method:"POST",body:JSON.stringify({name:name.trim(),parent_id:null})}); await loadFolders(); renderHome(); }
+async function newProject() {
+showProjectSetupModal();
+}
 function enterProject(id) { state.projectId=id; state.overviewFilter='all'; collapsedFolders.clear(); document.getElementById("home-view").style.display="none"; document.getElementById("project-view").style.display="flex"; loadAssets(id); }
 
 async function loadAssets(fid) {
@@ -518,17 +617,37 @@ function toggleCollapse(id) {
 }
 
 function makeRow(id,label,depth) {
-  var row=document.createElement("div");
-  var isTop=depth===0;
-  row.className="frow"+(state.folderId===id?" active":"")+(isTop?" frow-toplevel":"");
-  row.style.paddingLeft=(12+depth*14)+"px";
-  var hasKids=state.folders.some(function(f){return f.parent_id===id;});
-  var isCol=collapsedFolders.has(id);
-  var arrow=hasKids?'<span class="farrow'+(isCol?'':' open')+'" onclick="event.stopPropagation();toggleCollapse('+id+')">▶</span>':'<span class="farrow-sp"></span>';
-  var acts='<span class="factions"><button class="ibtn" onclick="event.stopPropagation();renameF('+id+')">✏️</button><button class="ibtn" onclick="event.stopPropagation();deleteF('+id+')">🗑</button></span>';
-  row.innerHTML=arrow+'<span class="ficon">📁</span><span class="fname">'+label+'</span>'+acts;
-  row.onclick=function(){loadAssets(id);};
-  return row;
+var row=document.createElement("div");
+var isTop=depth===0;
+var folder = state.folders.find(function(f) { return f.id === id; });
+var isManaged = folder && folder.is_managed;
+
+row.className="frow"+(state.folderId===id?" active":"")+(isTop?" frow-toplevel":"");
+row.style.paddingLeft=(12+depth*14)+"px";
+
+var hasKids=state.folders.some(function(f){return f.parent_id===id;});
+var isCol=collapsedFolders.has(id);
+var arrow=hasKids?'<span class="farrow'+(isCol?'':' open')+'" onclick="event.stopPropagation();toggleCollapse('+id+')">▶</span>':'<span class="farrow-sp"></span>';
+
+var icon = '📁';
+var acts = isManaged ? '' : '<span class="factions"><button class="ibtn" onclick="event.stopPropagation();renameF('+id+')">✏️</button><button class="ibtn" onclick="event.stopPropagation();deleteF('+id+')">🗑</button></span>';
+
+row.innerHTML=arrow+'<span class="ficon">'+icon+'</span><span class="fname">'+label+'</span>'+acts;
+row.onclick=function(){loadAssets(id);};
+
+if (isManaged) {
+  row.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+    showManagedFolderCtx(e, id);
+  });
+} else {
+  row.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+    showFolderCtx(e, id);
+  });
+}
+
+return row;
 }
 
 function addFolder(folder,container,depth) {
@@ -604,7 +723,19 @@ function renderGrid() {
   grid.querySelectorAll(".card[data-video]").forEach(function(card){if(card.dataset.video)initCardPreview(card);});
 }
 
-function makeFolderCard(folder){var subs=state.folders.filter(function(f){return f.parent_id===folder.id;}).length;var h='<div class="folder-card" onclick="loadAssets('+folder.id+')" oncontextmenu="showFolderCtx(event,'+folder.id+')" ondragover="folderDragOver(event,this)" ondragleave="folderDragLeave(this)" ondrop="folderDrop(event,'+folder.id+')">';h+='<div class="fc-thumb">📁</div><div class="fc-body"><div class="fc-name">'+folder.name+'</div>';if(subs)h+='<div class="fc-meta">'+subs+' sub-folder'+(subs!==1?'s':'')+'</div>';h+='</div></div>';return h;}
+function makeFolderCard(folder) {
+var subs = state.folders.filter(function(f) { return f.parent_id === folder.id; }).length;
+var isManaged = folder.is_managed;
+var icon = '📁';
+var contextMenu = isManaged ? 'showManagedFolderCtx(event,' + folder.id + ')' : 'showFolderCtx(event,' + folder.id + ')';
+
+var h = '<div class="folder-card" onclick="loadAssets(' + folder.id + ')" oncontextmenu="' + contextMenu + '" ondragover="folderDragOver(event,this)" ondragleave="folderDragLeave(this)" ondrop="folderDrop(event,' + folder.id + ')">';
+h += '<div class="fc-thumb">' + icon + '</div><div class="fc-body"><div class="fc-name">' + folder.name + '</div>';
+if (subs) h += '<div class="fc-meta">' + subs + ' sub-folder' + (subs !== 1 ? 's' : '') + '</div>';
+h += '</div></div>';
+return h;
+}
+var managedFolderCtxId = null;
 
 function makeCard(a){
   var s=a.ace_score;var cls=s===null?"none":s>=67?"green":s>=34?"amber":"red";
@@ -615,10 +746,11 @@ function makeCard(a){
 var tagsHtml=audTags.length?'<div class="card-tags">'+audTags.map(function(t){return'<span class="card-tag">'+t+'</span>';}).join('')+'</div>':'';
   var h='<div class="card" data-video="'+(a.video_filename||'')+'" draggable="true" onclick="openAsset('+a.id+')" oncontextmenu="showCtx(event,'+a.id+')" ondragstart="cardDragStart(event,'+a.id+')" ondragend="cardDragEnd()">';
   h+='<div class="cthumb">'+thumb+'<span class="ace '+cls+'">'+ace+'</span>'+masterBadge+'</div>';
-  h+='<div class="cbody"><div class="cname" title="'+displayName+'">'+displayName+'</div>';
-  h+='<div class="cmeta"><span class="vtag">v'+(a.latest_version||1)+'</span><span class="cdate">'+date+'</span></div>';
-  h+=tagsHtml;
-  h+='</div></div>';return h;
+  var dur=a.duration?formatDuration(a.duration):'';
+h+='<div class="cbody"><div class="cname" title="'+displayName+'">'+displayName+'</div>';
+h+='<div class="cmeta"><span class="vtag">v'+(a.latest_version||1)+'</span><span class="cdate">'+date+'</span>'+(dur?'<span class="cdur">'+dur+'</span>':'')+'</div>';
+h+=tagsHtml;
+h+='</div></div>';return h;
 }
 
 function showFolderInput(){document.getElementById("finput-row").style.display="block";document.getElementById("finput").focus();}
@@ -644,10 +776,43 @@ async function deleteProjCtx(){if(!projCtxId)return;var id=projCtxId;hideProjCtx
 var folderCtxId=null;
 function showFolderCtx(e,id){e.preventDefault();e.stopPropagation();folderCtxId=id;var m=document.getElementById("folder-ctx-menu");m.style.display="block";m.style.left=e.clientX+"px";m.style.top=e.clientY+"px";var r=m.getBoundingClientRect();if(r.right>window.innerWidth)m.style.left=(e.clientX-r.width)+"px";if(r.bottom>window.innerHeight)m.style.top=(e.clientY-r.height)+"px";}
 function hideFolderCtx(){document.getElementById("folder-ctx-menu").style.display="none";folderCtxId=null;}
+function showManagedFolderCtx(e, id) {
+e.preventDefault();
+e.stopPropagation();
+managedFolderCtxId = id;
+var m = document.getElementById('managed-folder-ctx-menu');
+m.style.display = 'block';
+m.style.left = e.clientX + 'px';
+m.style.top = e.clientY + 'px';
+var r = m.getBoundingClientRect();
+if (r.right > window.innerWidth) m.style.left = (e.clientX - r.width) + 'px';
+if (r.bottom > window.innerHeight) m.style.top = (e.clientY - r.height) + 'px';
+}
+
+function hideManagedFolderCtx() {
+document.getElementById('managed-folder-ctx-menu').style.display = 'none';
+managedFolderCtxId = null;
+}
+
+function editViaProjectSettings() {
+if (!managedFolderCtxId) return;
+var folder = state.folders.find(function(f) { return f.id === managedFolderCtxId; });
+if (!folder) return;
+
+// Walk up to find root project
+var projectId = managedFolderCtxId;
+while (folder && folder.parent_id) {
+  projectId = folder.parent_id;
+  folder = state.folders.find(function(f) { return f.id === projectId; });
+}
+
+hideManagedFolderCtx();
+showProjectSetupModal(projectId);
+}
 async function folderCtxRename(){if(!folderCtxId)return;var f=state.folders.find(function(x){return x.id===folderCtxId;});var name=prompt("Rename:",f?f.name:"");if(!name||name===(f&&f.name))return;await api("/api/folders/"+folderCtxId,{method:"PUT",body:JSON.stringify({name:name})});await loadFolders();renderSidebar();renderGrid();renderBreadcrumb();}
 async function folderCtxDelete(){if(!folderCtxId)return;var id=folderCtxId;hideFolderCtx();await safeDeleteFolder(id,async function(){if(state.folderId===id)state.folderId=state.projectId;await loadFolders();renderSidebar();renderGrid();});}
 
-document.addEventListener("click",function(e){if(!e.target.closest("#ctx-menu"))hideCtx();if(!e.target.closest("#proj-ctx-menu"))hideProjCtx();if(!e.target.closest("#folder-ctx-menu"))hideFolderCtx();if(!e.target.closest("#tag-suggestions"))hideSuggestions();});
+document.addEventListener("click",function(e){if(!e.target.closest("#ctx-menu"))hideCtx();if(!e.target.closest("#proj-ctx-menu"))hideProjCtx();if(!e.target.closest("#folder-ctx-menu"))hideFolderCtx();if(!e.target.closest("#managed-folder-ctx-menu"))hideManagedFolderCtx();if(!e.target.closest("#tag-suggestions"))hideSuggestions();});
 
 async function openAsset(id){var versions=await api("/api/versions/"+id);if(!versions.length)return;var asset=state.assets.find(function(a){return a.id===id;});state.currentAsset={id:id,versions:versions,asset:asset};renderDetail(asset,versions[0]);document.getElementById("grid-view").style.display="none";document.getElementById("detail-view").style.display="flex";}
 function closeDetail(){pauseVideo();document.getElementById("detail-view").style.display="none";document.getElementById("grid-view").style.display="flex";}
@@ -681,13 +846,24 @@ async function switchVersion(versionId){var v=state.currentAsset.versions.find(f
 function renderScores(version){var el=document.getElementById("scores-content");if(!version.kpi_data||!version.ace_score){el.innerHTML='<div class="no-score">No Brainsuite report paired<br>with this version</div>';return;}var cats;try{cats=JSON.parse(version.kpi_data);}catch(e){el.innerHTML='<div class="no-score">Could not read score data</div>';return;}var ace=version.ace_score,ac=ace>=67?"ace-green":ace>=34?"ace-amber":"ace-red",as=ace>=67?"Green":ace>=34?"Amber":"Red";var html='<div class="ace-display '+ac+'"><div class="ace-num">'+ace+'</div><div class="ace-lbl">ACE Score</div><div class="ace-stat">'+as+'</div></div><div class="cats">';Object.keys(cats).forEach(function(key){var cat=cats[key],sum=cat.kpis.reduce(function(a,k){return a+colorValues[k.original];},0),score=Math.round(sum/cat.kpis.length);var sc=score>=67?"cg":score>=34?"ca":"cr";html+='<div class="cat-sec"><div class="cat-hdr" onclick="toggleCat(\''+key+'\')"><span class="cat-nm">'+cat.name+'</span><span class="cat-wt">×'+cat.weight+'</span><span class="cat-sc '+sc+'">'+score+'</span><span class="cat-chv" id="chev-'+key+'">▼</span></div><div class="cat-kpis" id="kpis-'+key+'" style="display:none">';cat.kpis.forEach(function(kpi){var bc=kpi.original==="green"?"kg":kpi.original==="amber"?"kam":"kred";html+='<div class="kpi-row"><span class="kpi-nm">'+kpi.name+'</span><span class="kpi-badge '+bc+'">'+kpi.value+'</span></div>';});html+='</div></div>';});el.innerHTML=html+'</div>';}
 function toggleCat(key){var el=document.getElementById("kpis-"+key),chev=document.getElementById("chev-"+key),open=el.style.display==="none";el.style.display=open?"block":"none";chev.className="cat-chv"+(open?" open":"");}
 
-function showUpload(){if(!state.projectId){alert("Please open a project first.");return;}uploadFiles={video:null,pptx:null};document.getElementById("video-fname").textContent="";document.getElementById("pptx-fname").textContent="";document.getElementById("upstatus").style.display="none";document.getElementById("upload-submit").disabled=false;document.getElementById("upload-modal").style.display="block";}
+function showUpload() {
+if (!state.projectId) {
+alert("Please open a project first.");
+return;
+}
+
+uploadFiles = {video: null, pptx: null};
+document.getElementById('video-fname').textContent = '';
+document.getElementById('pptx-fname').textContent = '';
+document.getElementById('upstatus').style.display = 'none';
+document.getElementById('upload-submit').disabled = false;
+document.getElementById('upload-modal').style.display = 'block';
+}
 function closeUpload(){document.getElementById("upload-modal").style.display="none";}
 document.getElementById("modal-overlay").addEventListener("click",function(e){if(e.target===this)closeUpload();});
 document.getElementById("move-overlay").addEventListener("click",function(e){if(e.target===this)closeMoveModal();});
 document.getElementById("report-overlay").addEventListener("click",function(e){if(e.target===this)closeReportModal();});
 document.getElementById("tag-overlay").addEventListener("click",function(e){if(e.target===this)submitTags(true);});
-document.getElementById("tag-text-input").addEventListener("focus",function(){if(!tagState.projectId)return;api("/api/tags?project_id="+tagState.projectId).then(function(tags){tagState.suggestions=tags||[];});});
 function filePicked(type,input){if(!input.files[0])return;uploadFiles[type]=input.files[0];document.getElementById(type+"-fname").textContent="✓ "+input.files[0].name;}
 function dzOver(e,id){e.preventDefault();document.getElementById(id).classList.add("over");}
 function dzOut(id){document.getElementById(id).classList.remove("over");}
@@ -699,10 +875,13 @@ async function submitUpload(){
   document.getElementById("upload-submit").disabled=true;setStatus("Processing...","info");
   if(uploadFiles.pptx&&!checkPair(uploadFiles.video.name,uploadFiles.pptx.name)){if(!confirm('This report may not belong to this video.\n\nVideo: '+uploadFiles.video.name+'\nReport: '+uploadFiles.pptx.name+'\n\nPair them anyway?')){document.getElementById("upload-submit").disabled=false;setStatus("Upload cancelled.","error");return;}}
   var scoresJson=null,assetInfoJson=null,thumbnail=null,aceScore=null;
-  if(uploadFiles.pptx){try{setStatus("Parsing Brainsuite report...","info");var parsed=await parsePPTX(uploadFiles.pptx);aceScore=calcACE(parsed.categories);scoresJson=JSON.stringify(parsed.categories);assetInfoJson=JSON.stringify(parsed.assetInfo);thumbnail=parsed.assetInfo.thumbnail||null;}catch(err){console.error(err);setStatus("Could not parse PPTX — uploading video only","info");}}
-  if(!thumbnail&&uploadFiles.video){setStatus("Generating thumbnail...","info");thumbnail=await generateVideoThumbnail(uploadFiles.video);}
+  if(uploadFiles.pptx){try{setStatus("Parsing Brainsuite report...","info");var parsed=await parsePPTX(uploadFiles.pptx);aceScore=calcACE(parsed.categories);scoresJson=JSON.stringify(parsed.categories);assetInfoJson=JSON.stringify(parsed.assetInfo);}catch(err){console.error(err);setStatus("Could not parse PPTX — uploading video only","info");}}
+  setStatus("Generating thumbnail...","info");
+var thumbResult=await generateVideoThumbnail(uploadFiles.video);
+thumbnail=thumbResult.thumbnail;
+var duration=thumbResult.duration;
   setStatus("Uploading...","info");
-  var form=new FormData();form.append("video",uploadFiles.video);if(uploadFiles.pptx)form.append("pptx",uploadFiles.pptx);if(state.folderId)form.append("folder_id",state.folderId);if(scoresJson)form.append("scores",scoresJson);if(assetInfoJson)form.append("asset_info",assetInfoJson);if(thumbnail)form.append("thumbnail",thumbnail);if(aceScore!==null)form.append("ace_score",aceScore);
+  var form=new FormData();form.append("video",uploadFiles.video);if(uploadFiles.pptx)form.append("pptx",uploadFiles.pptx);if(state.folderId)form.append("folder_id",state.folderId);if(scoresJson)form.append("scores",scoresJson);if(assetInfoJson)form.append("asset_info",assetInfoJson);if(thumbnail)form.append("thumbnail",thumbnail);if(duration!==null&&duration!==undefined)form.append("duration",duration);if(aceScore!==null)form.append("ace_score",aceScore);
   try{
     var res=await fetch("/api/upload",{method:"POST",body:form});var data=await res.json();
     if(data.ok){
@@ -721,45 +900,380 @@ async function submitReport(){
   if(!reportFile){setRptStatus("Please select a PPTX file","error");return;}
   if(reportVideoName&&!checkPair(reportVideoName,reportFile.name)){if(!confirm('This report may not belong to this video.\n\nVideo: '+reportVideoName+'\nReport: '+reportFile.name+'\n\nPair them anyway?'))return;}
   document.getElementById("report-submit").disabled=true;setRptStatus("Parsing report...","info");
-  try{var parsed=await parsePPTX(reportFile);var aceScore=calcACE(parsed.categories);setRptStatus("Uploading...","info");var form=new FormData();form.append("pptx",reportFile);form.append("scores",JSON.stringify(parsed.categories));form.append("asset_info",JSON.stringify(parsed.assetInfo));form.append("ace_score",aceScore);if(parsed.assetInfo.thumbnail)form.append("thumbnail",parsed.assetInfo.thumbnail);var res=await fetch("/api/versions/"+reportVersionId+"/report",{method:"POST",body:form});var data=await res.json();if(data.ok){setRptStatus("Report added!","success");setTimeout(function(){closeReportModal();loadAssets(state.folderId);if(document.getElementById("detail-view").style.display!=="none"&&state.currentAsset)openAsset(state.currentAsset.id);},1000);}else{setRptStatus("Error: "+(data.error||"Failed"),"error");document.getElementById("report-submit").disabled=false;}}catch(err){setRptStatus("Error: "+err.message,"error");document.getElementById("report-submit").disabled=false;}
+  try{var parsed=await parsePPTX(reportFile);var aceScore=calcACE(parsed.categories);setRptStatus("Uploading...","info");var form=new FormData();form.append("pptx",reportFile);form.append("scores",JSON.stringify(parsed.categories));form.append("asset_info",JSON.stringify(parsed.assetInfo));form.append("ace_score",aceScore);var res=await fetch("/api/versions/"+reportVersionId+"/report",{method:"POST",body:form});var data=await res.json();if(data.ok){setRptStatus("Report added!","success");setTimeout(function(){closeReportModal();loadAssets(state.folderId);if(document.getElementById("detail-view").style.display!=="none"&&state.currentAsset)openAsset(state.currentAsset.id);},1000);}else{setRptStatus("Error: "+(data.error||"Failed"),"error");document.getElementById("report-submit").disabled=false;}}catch(err){setRptStatus("Error: "+err.message,"error");document.getElementById("report-submit").disabled=false;}
 }
 function addReportFromCtx(){var asset=state.assets.find(function(a){return a.id===ctxId;});if(!asset||!asset.latest_version_id)return;showReportModal(asset.latest_version_id,asset.video_filename);}
 
-function showTagModal(assetId,videoUrl,baseName,projectId){
-  tagState.assetId=assetId;tagState.videoUrl=videoUrl;tagState.baseName=baseName;tagState.projectId=projectId;
-  tagState.phase=null;tagState.platform=null;tagState.format=null;tagState.isMaster=false;tagState.audienceTags=[];tagState.suggestions=[];
-  var ctx=getFolderContext(state.folderId,projectId);
-  if(ctx.phase)tagState.phase=ctx.phase;if(ctx.platform)tagState.platform=ctx.platform;if(ctx.format)tagState.format=ctx.format;
-  var vid=document.getElementById("tag-video");vid.src=videoUrl;vid.load();vid.play().catch(function(){});
-  document.getElementById("tag-display-name").value=baseName;document.getElementById("tag-text-input").value="";hideSuggestions();document.getElementById("tag-master").checked=false;
-  api("/api/tags?project_id="+projectId).then(function(tags){tagState.suggestions=tags||[];});
-  renderTagPills();renderAudienceTags();validateTagForm();document.getElementById("tag-modal").style.display="block";
+function showTagModal(assetId, videoUrl, baseName, projectId) {
+tagState.assetId = assetId;
+tagState.videoUrl = videoUrl;
+tagState.baseName = baseName;
+tagState.projectId = projectId;
+tagState.phase = null;
+tagState.platform = null;
+tagState.format = null;
+tagState.isMaster = false;
+tagState.audienceTags = [];
+tagState.suggestions = [];
+tagState.contentOrigin = 'Brand';
+tagState.language = null;
+
+var ctx = getFolderContext(state.folderId, projectId);
+if (ctx.phase) tagState.phase = ctx.phase;
+if (ctx.platform) tagState.platform = ctx.platform;
+if (ctx.format) tagState.format = ctx.format;
+if (ctx.test) tagState.testConfig = {test: ctx.test, cta: ctx.cta};
+else tagState.testConfig = null;
+
+// Load project config for languages
+api('/api/folders/' + projectId + '/config').then(function(config) {
+  tagState.projectConfig = config;
+  renderTagModal();
+});
+
+var vid = document.getElementById('tag-video');
+vid.src = videoUrl;
+vid.load();
+vid.play().catch(function(){});
+
+document.getElementById('tag-display-name').value = baseName;
+document.getElementById('tag-master').checked = false;
+
+document.getElementById('tag-modal').style.display = 'block';
 }
 function closeTagModal(){var vid=document.getElementById("tag-video");if(vid.src.startsWith("blob:"))URL.revokeObjectURL(vid.src);vid.pause();vid.src="";document.getElementById("tag-modal").style.display="none";loadFolders().then(function(){loadAssets(state.folderId);});}
-function getFolderContext(folderId,projectId){if(!folderId||folderId===projectId)return{};var f=state.folders.find(function(x){return x.id===folderId;});if(!f)return{};if(f.parent_id===projectId)return{phase:f.name};var p=state.folders.find(function(x){return x.id===f.parent_id;});if(!p)return{phase:f.name};if(p.parent_id===projectId)return{phase:p.name,platform:f.name};var g=state.folders.find(function(x){return x.id===p.parent_id;});if(g&&g.parent_id===projectId)return{phase:g.name,platform:p.name,format:f.name};return{};}
-function renderTagPills(){document.getElementById("tag-phases").innerHTML=PHASES.map(function(p){return'<button class="pill'+(tagState.phase===p?" active":"")+'" onclick="selectTag(\'phase\',\''+p+'\')">'+p+'</button>';}).join("");document.getElementById("tag-platforms").innerHTML=PLATFORMS.map(function(p){return'<button class="pill'+(tagState.platform===p?" active":"")+'" onclick="selectTag(\'platform\',\''+p+'\')">'+p+'</button>';}).join("");document.getElementById("tag-formats").innerHTML=FORMATS.map(function(f){return'<button class="pill'+(tagState.format===f?" active":"")+'" onclick="selectTag(\'format\',\''+f+'\')">'+f+'</button>';}).join("");validateTagForm();}
-function selectTag(field,val){tagState[field]=tagState[field]===val?null:val;renderTagPills();}
-function renderAudienceTags(){var wrap=document.getElementById("tag-input-wrap");wrap.querySelectorAll(".tag-pill").forEach(function(p){p.remove();});var input=document.getElementById("tag-text-input");tagState.audienceTags.forEach(function(tag){var pill=document.createElement("span");pill.className="tag-pill";pill.innerHTML=tag+'<span class="tag-pill-x" onclick="removeAudienceTag(\''+tag+'\')">×</span>';wrap.insertBefore(pill,input);});}
-function addAudienceTag(tag){tag=tag.trim();if(!tag||tagState.audienceTags.indexOf(tag)!==-1)return;tagState.audienceTags.push(tag);document.getElementById("tag-text-input").value="";hideSuggestions();renderAudienceTags();}
-function removeAudienceTag(tag){tagState.audienceTags=tagState.audienceTags.filter(function(t){return t!==tag;});renderAudienceTags();}
-function handleTagKeydown(e){if(e.key==="Enter"||e.key===","){e.preventDefault();var val=document.getElementById("tag-text-input").value.trim().replace(",","");if(val)addAudienceTag(val);}if(e.key==="Escape")hideSuggestions();if(e.key==="Backspace"&&!document.getElementById("tag-text-input").value&&tagState.audienceTags.length)removeAudienceTag(tagState.audienceTags[tagState.audienceTags.length-1]);}
-function handleTagInput(e){var val=e.target.value.toLowerCase().trim();if(!val){hideSuggestions();return;}var matches=tagState.suggestions.filter(function(s){return s.toLowerCase().includes(val)&&tagState.audienceTags.indexOf(s)===-1;});if(!matches.length){hideSuggestions();return;}var box=document.getElementById("tag-suggestions");box.innerHTML=matches.map(function(t){return'<div class="tag-suggestion-item" onmousedown="addAudienceTag(\''+t+'\')">'+t+'</div>';}).join("");var rect=document.getElementById("tag-input-wrap").getBoundingClientRect();box.style.top=(rect.bottom+4)+"px";box.style.left=rect.left+"px";box.style.width=rect.width+"px";box.style.display="block";}
-function hideSuggestions(){document.getElementById("tag-suggestions").style.display="none";}
-function validateTagForm(){document.getElementById("tag-confirm").disabled=!(tagState.phase&&tagState.platform);}
+function getFolderContext(folderId, projectId) {
+if (!folderId || folderId === projectId) return {};
 
+var path = [];
+var id = folderId;
+
+// Walk up to project root, collecting managed folders
+while (id && id !== projectId) {
+  var f = state.folders.find(function(x) { return x.id === id; });
+  if (!f) break;
+  if (f.is_managed) {
+    path.unshift({id: f.id, name: f.name, test: f.brainsuite_test, cta: f.cta});
+  }
+  id = f.parent_id;
+}
+
+// Parse path: Phase / Platform / Format (if exists)
+if (path.length === 0) return {};
+if (path.length === 1) return {phase: path[0].name};
+if (path.length === 2) return {
+  phase: path[0].name, 
+  platform: path[1].name,
+  test: path[1].test,
+  cta: path[1].cta
+};
+if (path.length >= 3) return {
+  phase: path[0].name, 
+  platform: path[1].name, 
+  format: path[2].name,
+  test: path[2].test,
+  cta: path[2].cta
+};
+
+return {};
+}
+function renderTagModal() {
+var ctx = getFolderContext(state.folderId, tagState.projectId);
+var inManagedFolder = !!(ctx.phase || ctx.platform || ctx.format);
+var config = tagState.projectConfig || {};
+var hasAdditionalLangs = config.identity && config.identity.additionalLanguages && config.identity.additionalLanguages.length > 0;
+
+// Show/hide context-dependent sections
+var phaseSection = document.getElementById('tag-section-phase');
+var platformSection = document.getElementById('tag-section-platform');
+var formatSection = document.getElementById('tag-section-format');
+var testBanner = document.getElementById('tag-test-banner');
+var contentOriginSection = document.getElementById('tag-section-content-origin');
+var languageSection = document.getElementById('tag-section-language');
+
+if (inManagedFolder) {
+  if (phaseSection) phaseSection.style.display = 'none';
+  if (platformSection) platformSection.style.display = 'none';
+  if (formatSection) formatSection.style.display = 'none';
+  
+  // Show test banner if test is configured
+  if (testBanner && tagState.testConfig && tagState.testConfig.test) {
+    testBanner.style.display = 'block';
+    testBanner.innerHTML = '📍 Will test as: <strong>' + tagState.testConfig.test + '</strong>';
+  } else if (testBanner) {
+    testBanner.style.display = 'none';
+  }
+} else {
+  if (phaseSection) phaseSection.style.display = 'block';
+  if (platformSection) platformSection.style.display = 'block';
+  if (formatSection) formatSection.style.display = 'block';
+  if (testBanner) testBanner.style.display = 'none';
+  
+  // Render pills for manual selection using project config
+var configPhases = (config.org && config.org.phases) || PHASES;
+document.getElementById('tag-phases').innerHTML = configPhases.map(function(p) {
+return '<button class="pill' + (tagState.phase === p ? ' active' : '') + '" onclick="selectTag(\'phase\',\'' + p + '\')">' + p + '</button>';
+}).join('');
+
+// Get available platforms from project config
+var configPlatforms = [];
+if (config.phaseChannels && tagState.phase && config.phaseChannels[tagState.phase]) {
+configPlatforms = config.phaseChannels[tagState.phase]
+  .filter(function(ch) { return ch.enabled !== false; })
+  .map(function(ch) { return ch.name; });
+}
+
+// Use config platforms if available, otherwise fallback to hardcoded
+var platformList = configPlatforms.length > 0 ? configPlatforms : PLATFORMS;
+document.getElementById('tag-platforms').innerHTML = platformList.map(function(p) {
+return '<button class="pill' + (tagState.platform === p ? ' active' : '') + '" onclick="selectTag(\'platform\',\'' + p + '\')">' + p + '</button>';
+}).join('');
+
+// Build format list from project config for selected platform
+var formatOptions = [];
+var formatSection = document.getElementById('tag-section-format');
+
+if (tagState.platform && tagState.phase && config.phaseChannels && config.phaseChannels[tagState.phase]) {
+var channels = config.phaseChannels[tagState.phase];
+var platformChannel = channels.find(function(ch) { return ch.name === tagState.platform; });
+
+if (platformChannel && platformChannel.formats) {
+  // Multi-format platform (Meta, OLV 6, etc.)
+  formatOptions = platformChannel.formats
+    .filter(function(f) { return f.enabled !== false; })
+    .map(function(f) { return f.name; });
+}
+}
+
+// Show/hide format section based on whether platform has formats
+if (formatOptions.length > 0) {
+if (formatSection) formatSection.style.display = 'block';
+document.getElementById('tag-formats').innerHTML = formatOptions.map(function(f) {
+  return '<button class="pill' + (tagState.format === f ? ' active' : '') + '" onclick="selectTag(\'format\',\'' + f + '\')">' + f + '</button>';
+}).join('');
+} else {
+// Single-format platform (TikTok, Snapchat, etc.) - hide format section
+if (formatSection) formatSection.style.display = 'none';
+tagState.format = null; // Clear any selected format
+}
+}
+
+// Content Origin
+if (contentOriginSection) {
+  contentOriginSection.style.display = 'block';
+  document.getElementById('tag-content-origin').innerHTML = ['Brand', 'Creator'].map(function(co) {
+    return '<button class="pill' + (tagState.contentOrigin === co ? ' active' : '') + '" onclick="tagState.contentOrigin=\'' + co + '\';renderTagModal()">' + co + '</button>';
+  }).join('');
+}
+
+// Language (only if project has additional languages)
+if (languageSection) {
+  if (hasAdditionalLangs) {
+    languageSection.style.display = 'block';
+    var allLangs = [config.identity.defaultLanguage].concat(config.identity.additionalLanguages);
+    document.getElementById('tag-language').innerHTML = allLangs.map(function(lang) {
+      var isSelected = tagState.language === lang || (!tagState.language && lang === config.identity.defaultLanguage);
+      return '<button class="pill' + (isSelected ? ' active' : '') + '" onclick="tagState.language=\'' + lang + '\';renderTagModal()">' + lang + '</button>';
+    }).join('');
+  } else {
+    languageSection.style.display = 'none';
+  }
+}
+// Show project-defined audiences as clickable pills
+var audiencePillsEl = document.getElementById('tag-audience-pills');
+if (audiencePillsEl) {
+var configAudiences = (config.org && config.org.audiences) || [];
+if (configAudiences.length > 0) {
+  audiencePillsEl.innerHTML = configAudiences.map(function(aud) {
+    var isAdded = tagState.audienceTags.indexOf(aud) !== -1;
+    return '<button class="pill' + (isAdded ? ' active' : '') + '" onclick="toggleAudienceTag(\'' + aud + '\')">' + aud + '</button>';
+  }).join('');
+  audiencePillsEl.style.display = 'flex';
+} else {
+  audiencePillsEl.style.display = 'none';
+}
+}
+
+renderAudienceTags();
+validateTagForm();
+}
+function selectTag(field,val){
+tagState[field]=tagState[field]===val?null:val;
+// Clear format if platform changed
+if (field === 'platform') tagState.format = null;
+renderTagModal();
+}
+function renderAudienceTags(){
+// Now handled by renderTagModal - audiences show as active pills in tag-audience-pills
+// This function can stay empty or be removed, but keeping it prevents errors if called elsewhere
+}
+function addAudienceTag(tag){
+tag=tag.trim();
+if(!tag||tagState.audienceTags.indexOf(tag)!==-1)return;
+tagState.audienceTags.push(tag);
+renderAudienceTags();
+}
+function toggleAudienceTag(tag) {
+if (tagState.audienceTags.length === 1 && tagState.audienceTags[0] === tag) {
+  // Clicking the already-selected tag deselects it
+  tagState.audienceTags = [];
+} else {
+  // Select this tag (replaces any previous selection)
+  tagState.audienceTags = [tag];
+}
+renderTagModal(); // Re-render to update pill state
+}
+function removeAudienceTag(tag){tagState.audienceTags=tagState.audienceTags.filter(function(t){return t!==tag;});renderAudienceTags();}
+function validateTagForm() {
+var ctx = getFolderContext(state.folderId, tagState.projectId);
+var inManagedFolder = !!(ctx.phase || ctx.platform);
+
+// If in managed folder, always valid (context provides phase/platform)
+if (inManagedFolder) {
+  document.getElementById('tag-confirm').disabled = false;
+} else {
+  // Manual tagging requires phase + platform
+  document.getElementById('tag-confirm').disabled = !(tagState.phase && tagState.platform);
+}
+}
+async function getBrainsuiteTestConfig(assetId) {
+// Returns test configuration for an asset, ready for Brainsuite API
+// Returns: {test: "Instagram Story", cta: true, language: "English", company: "Unilever", brand: "Dove", ...}
+// Returns null if asset has no test configured (e.g., Pinterest, Display, or unmanaged folder)
+
+var asset = state.assets.find(function(a) { return a.id === assetId; });
+if (!asset) return null;
+
+// Walk up folder tree to find managed folder with test config
+var folderId = asset.folder_id;
+var testConfig = null;
+
+while (folderId) {
+  var folder = state.folders.find(function(f) { return f.id === folderId; });
+  if (!folder) break;
+  
+  // If this is a managed folder with a test configured, use it
+  if (folder.is_managed && folder.brainsuite_test) {
+    testConfig = {
+      test: folder.brainsuite_test,
+      cta: folder.cta === 1
+    };
+    break;
+  }
+  
+  folderId = folder.parent_id;
+}
+
+// If no test found, return null (non-testable asset)
+if (!testConfig) return null;
+
+// Get project-level config
+var projectId = state.projectId;
+var projectConfig = await api('/api/folders/' + projectId + '/config');
+
+// Build complete config object for Brainsuite API
+return {
+  // Test configuration
+  test: testConfig.test,
+  cta: testConfig.cta,
+  
+  // Asset metadata
+  assetName: asset.base_name,
+  language: asset.language || (projectConfig.identity && projectConfig.identity.defaultLanguage) || 'English',
+  contentOrigin: asset.content_origin || 'Brand',
+  
+  // Project/campaign context (from Step 1 of project setup)
+  company: projectConfig.identity && projectConfig.identity.company,
+  brand: projectConfig.identity && projectConfig.identity.brand,
+  market: projectConfig.identity && projectConfig.identity.market,
+  businessGroup: projectConfig.identity && projectConfig.identity.businessGroup,
+  category: projectConfig.identity && projectConfig.identity.category,
+  
+  // Hardcoded values as per original spec
+  assetStage: 'Iteration',
+  assetOrigin: 'Global (BG)',
+  
+  // Asset ID for reference
+  assetId: assetId
+};
+}
+function findTargetFolder(projectId, phase, platform, format) {
+if (!projectId || !phase || !platform) return null;
+
+// Find phase folder
+var phaseFolder = state.folders.find(function(f) {
+  return f.parent_id === projectId && f.name === phase && f.is_managed;
+});
+if (!phaseFolder) return null;
+
+// Find platform folder under phase
+var platformFolder = state.folders.find(function(f) {
+  return f.parent_id === phaseFolder.id && f.name === platform && f.is_managed;
+});
+
+// If platform has subfolders (formats), try to find format folder
+if (platformFolder && format) {
+  var formatFolder = state.folders.find(function(f) {
+    return f.parent_id === platformFolder.id && f.name === format && f.is_managed;
+  });
+  if (formatFolder) return formatFolder.id;
+}
+
+// If no format or format folder not found, return platform folder
+if (platformFolder) return platformFolder.id;
+
+// Fallback to phase folder if platform not found
+return phaseFolder.id;
+}
 async function submitTags(skip){
   if(skip){closeTagModal();return;}
-  var leftover=document.getElementById("tag-text-input").value.trim();if(leftover)addAudienceTag(leftover);
-  var displayName=document.getElementById("tag-display-name").value.trim();
-  var payload={display_name:displayName!==tagState.baseName?displayName:null,phase:tagState.phase,platform:tagState.platform,format:tagState.format||null,is_master:tagState.isMaster?1:0,audience_tags:tagState.audienceTags,project_id:tagState.projectId};
-  var res=await api("/api/assets/"+tagState.assetId+"/tags",{method:"PUT",body:JSON.stringify(payload)});
-  if(!res.ok)return;
+var displayName=document.getElementById("tag-display-name").value.trim();
+var payload={display_name:displayName!==tagState.baseName?displayName:null,phase:tagState.phase,platform:tagState.platform,format:tagState.format||null,is_master:tagState.isMaster?1:0,audience_tags:tagState.audienceTags,content_origin:tagState.contentOrigin||'Brand',language:tagState.language||null,project_id:tagState.projectId};
+var res=await api("/api/assets/"+tagState.assetId+"/tags",{method:"PUT",body:JSON.stringify(payload)});
+if(!res.ok)return;
+
+// Auto-move to correct folder based on tags
+var targetFolderId = findTargetFolder(tagState.projectId, tagState.phase, tagState.platform, tagState.format);
+if (targetFolderId) {
+  await api("/api/assets/"+tagState.assetId, {
+    method: "PUT", 
+    body: JSON.stringify({folder_id: targetFolderId})
+  });
+}
   var vid=document.getElementById("tag-video");if(vid.src.startsWith("blob:"))URL.revokeObjectURL(vid.src);vid.pause();vid.src="";document.getElementById("tag-modal").style.display="none";
-  var savedId=tagState.assetId;var inDetail=document.getElementById("detail-view").style.display!=="none";
-  await loadFolders();if(res.folder_id)state.folderId=res.folder_id;
-  state.assets=await api(state.folderId?"/api/assets?folder_id="+state.folderId:"/api/assets");
-  renderSidebar();renderBreadcrumb();
-  if(inDetail&&savedId){var updated=state.assets.find(function(a){return a.id===savedId;});if(updated&&state.currentAsset){state.currentAsset.asset=updated;renderDetail(updated,state.currentAsset.versions[0]);}}else{renderGrid();}
+  var savedId=tagState.assetId;
+var inDetail=document.getElementById("detail-view").style.display!=="none";
+var wasInOverview = state.folderId === state.projectId;
+
+await loadFolders();
+
+// If asset moved to new folder, update folderId
+if(res.folder_id) {
+state.folderId = res.folder_id;
+}
+
+// Stay in overview if user uploaded from overview
+if (wasInOverview) {
+state.folderId = state.projectId;
+state.assets = await api("/api/assets?project_id="+state.projectId);
+renderSidebar();
+renderOverview();
+renderBreadcrumb();
+} else {
+// Otherwise go to the folder where asset landed
+state.assets = await api(state.folderId?"/api/assets?folder_id="+state.folderId:"/api/assets");
+renderSidebar();
+renderBreadcrumb();
+if(inDetail&&savedId){
+  var updated=state.assets.find(function(a){return a.id===savedId;});
+  if(updated&&state.currentAsset){
+    state.currentAsset.asset=updated;
+    renderDetail(updated,state.currentAsset.versions[0]);
+  }
+}else{
+  renderGrid();
+}
+}
 }
 
 window.addEventListener("dragenter",function(e){if(state.draggingAssetId)return;if(document.getElementById("upload-modal").style.display==="block"||document.getElementById("move-modal").style.display==="block"||document.getElementById("report-modal").style.display==="block"||document.getElementById("tag-modal").style.display==="block")return;if(!e.dataTransfer||!Array.from(e.dataTransfer.types||[]).includes("Files"))return;dragCounter++;if(dragCounter===1)document.getElementById("drag-overlay").classList.add("active");});
@@ -779,7 +1293,7 @@ document.addEventListener("keydown",function(e){if(e.key==="Escape"){if(document
 
 function checkPair(videoName,pptxName){var vNorm=videoName.toLowerCase().replace(/[^a-z0-9]/g,"");var pNorm=pptxName.toLowerCase().replace(/[^a-z0-9]/g,"");if(pNorm.includes(vNorm))return true;var pCore=pptxName.toLowerCase().replace(/^ace[^_]*_/,"").replace(/_?\d{8}\.pptx$/,"").replace(/^[a-z]+_/,"").replace(/[^a-z0-9]/g,"");return pCore.length>4&&vNorm.includes(pCore);}
 
-async function generateVideoThumbnail(file){return new Promise(function(resolve){var video=document.createElement("video"),url=URL.createObjectURL(file),captured=false;video.muted=true;video.playsInline=true;function capture(){if(captured)return;captured=true;try{var c=document.createElement("canvas");c.width=320;c.height=Math.round(320*video.videoHeight/video.videoWidth)||180;c.getContext("2d").drawImage(video,0,0,c.width,c.height);URL.revokeObjectURL(url);resolve(c.toDataURL("image/jpeg",0.7));}catch(e){URL.revokeObjectURL(url);resolve(null);}}video.addEventListener("seeked",capture);video.addEventListener("loadeddata",function(){video.currentTime=video.duration>0?Math.min(2,video.duration*0.2):0;});video.onerror=function(){URL.revokeObjectURL(url);resolve(null);};video.src=url;video.load();});}
+async function generateVideoThumbnail(file){return new Promise(function(resolve){var video=document.createElement("video"),url=URL.createObjectURL(file),captured=false;video.muted=true;video.playsInline=true;function capture(){if(captured)return;captured=true;try{var c=document.createElement("canvas");c.width=320;c.height=Math.round(320*video.videoHeight/video.videoWidth)||180;c.getContext("2d").drawImage(video,0,0,c.width,c.height);URL.revokeObjectURL(url);resolve({thumbnail:c.toDataURL("image/jpeg",0.7),duration:Math.round(video.duration)||null});}catch(e){URL.revokeObjectURL(url);resolve({thumbnail:null,duration:null});}}video.addEventListener("seeked",capture);video.addEventListener("loadeddata",function(){video.currentTime=video.duration>0?Math.min(2,video.duration*0.2):0;});video.onerror=function(){URL.revokeObjectURL(url);resolve({thumbnail:null,duration:null});};video.src=url;video.load();});}
 
 function calcACE(cats){var tw=0,ws=0;Object.keys(cats).forEach(function(k){var sum=cats[k].kpis.reduce(function(a,kpi){return a+colorValues[kpi.original];},0);ws+=(sum/cats[k].kpis.length)*cats[k].weight;tw+=cats[k].weight;});return Math.round(ws/tw);}
 function mkCats(){return JSON.parse(JSON.stringify({attention:{name:"Attention",weight:3,kpis:[{id:"att_1",name:"Engaging Beginning",type:"binary",original:"green",value:"✓",thresholds:null,hasAmber:false},{id:"att_2",name:"Scene Pace",type:"binary",original:"green",value:"✓",thresholds:null,hasAmber:false},{id:"att_3",name:"Scene Motion",type:"numeric",original:"green",value:75,thresholds:{red:33,amber:50},hasAmber:true}]},branding:{name:"Branding",weight:5,kpis:[{id:"bra_1",name:"Brand Cut-Through",type:"numeric",original:"red",value:19,thresholds:{red:25,amber:50},hasAmber:true},{id:"bra_2",name:"Brand CT First Seconds",type:"binary",original:"green",value:"✓",thresholds:null,hasAmber:false},{id:"bra_3",name:"Product Attention Over Time",type:"numeric",original:"red",value:0,thresholds:{red:5,amber:27},hasAmber:true},{id:"bra_4",name:"Product CT First Seconds",type:"binary",original:"red",value:"✗",thresholds:null,hasAmber:false}]},processing:{name:"Processing",weight:1,kpis:[{id:"pro_1",name:"Ad Recall Potential",type:"numeric",original:"green",value:94,thresholds:{red:33,amber:50},hasAmber:true},{id:"pro_2",name:"Visual Simplicity",type:"numeric",original:"green",value:81,thresholds:{red:33,amber:50},hasAmber:true},{id:"pro_3",name:"Ideal Aspect Ratio",type:"binary",original:"green",value:"✓",thresholds:null,hasAmber:false},{id:"pro_4",name:"Enough Time to Read",type:"numeric",original:"red",value:8,thresholds:{red:33,amber:50},hasAmber:true},{id:"pro_5",name:"Ideal Sound Setting",type:"binary",original:"green",value:"✓",thresholds:null,hasAmber:false}]},emotional:{name:"Emotional",weight:1,kpis:[{id:"emo_1",name:"Human Element",type:"numeric",original:"green",value:81,thresholds:{red:30,amber:70},hasAmber:true},{id:"emo_2",name:"Activation: Visual",type:"numeric",original:"green",value:81,thresholds:{red:33,amber:50},hasAmber:true},{id:"emo_3",name:"Activation: Text",type:"numeric",original:"green",value:83,thresholds:{red:25,amber:40},hasAmber:true}]},persuasion:{name:"Persuasion",weight:1,kpis:[{id:"per_1",name:"CTA Cut-Through",type:"binary",original:"red",value:"✗",thresholds:null,hasAmber:false},{id:"per_2",name:"Engagement Potential",type:"numeric",original:"amber",value:50,thresholds:{red:33,amber:50},hasAmber:true}]}}))}
@@ -788,19 +1302,441 @@ function exThresh(text){var p1=[/&lt;\s*(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s*-\s*
 function detColor(val,t){if(!t)return val>0?"green":"red";if(t.hasAmber){if(val<t.red)return"red";if(val<=t.amber)return"amber";return"green";}return val>t.red?"green":"red";}
 async function parsePPTX(file){var zip=await JSZip.loadAsync(file);var thumbUrl,allText="",kpiOv="",slideTexts={},kpiData={},thresh={};var tp=Object.keys(zip.files).find(function(p){return /ppt\/media\/image-4-1\.(png|jpg|jpeg)/i.test(p);});if(tp){try{var d=await zip.file(tp).async("base64");var e=tp.split(".").pop().toLowerCase();thumbUrl="data:image/"+(e==="png"?"png":"jpeg")+";base64,"+d;}catch(e){}}for(var path in zip.files){var mm=path.match(/ppt\/slides\/slide(\d+)\.xml/);if(mm){var content=await zip.file(path).async("string");var text=exText(content);slideTexts[mm[1]]=text;allText+=" "+text;if(/KPI Overview|Attention:.*Branding:.*Processing Ease:/i.test(text))kpiOv=text;}}var nm=allText.match(/Asset Name:\s*([A-Za-z0-9_\s&;]+?)\s+Asset Stage/i);var assetName=nm?nm[1].trim():"Unknown";var tsm=allText.match(/Date:\s*(\d{1,2}\/\d{1,2}\/\d{4},\s*\d{1,2}:\d{2}\s*[AP]M)/i);var assetDate=tsm?tsm[1]:null;var company=(allText.match(/Which Company\?:\s*(\w+)/i)||[])[1]||null;var brand=(allText.match(/Brand Name:\s*([^\n:]+?)(?=\s+(?:Voice-Over|Asset|File|Market|Date|Category))/i)||[])[1];if(brand)brand=brand.trim();var pm=allText.match(/Scene pace is.*?(?:above|below) benchmark for\s+([A-Za-z0-9\s\-]+)/i);var platform=pm?pm[1].trim():null;for(var sn in slideTexts){var st=slideTexts[sn];if(/KPI Overview/i.test(st))continue;if(/Scene Motion.*?motion score/i.test(st)&&!thresh.sm)thresh.sm=exThresh(st);if(/Brand Cut-Through\s+\d+.*?brand cut-through/i.test(st)&&!/First Seconds/i.test(st.substring(0,100))&&!thresh.bc)thresh.bc=exThresh(st);if(/Packaged Product Attention Over Time/i.test(st)&&!thresh.pt)thresh.pt=exThresh(st);if(/Ad Recall Potential.*?ad recall potential/i.test(st)&&!thresh.ar)thresh.ar=exThresh(st);if(/Visual Simplicity.*?visual simplicity/i.test(st)&&!thresh.vs)thresh.vs=exThresh(st);if(/Enough Time to Read.*?text on the screen/i.test(st)&&!thresh.rt)thresh.rt=exThresh(st);if(/Human Element.*?incorporates a person/i.test(st)&&!thresh.he)thresh.he=exThresh(st);if(/Activation Potential: Visual.*?of scenes, the visuals/i.test(st)&&!thresh.va)thresh.va=exThresh(st);if(/Activation Potential: Text.*?scenes with text/i.test(st)&&!thresh.ta)thresh.ta=exThresh(st);if(/Engagement Potential.*?engagement potential/i.test(st)&&!thresh.ep)thresh.ep=exThresh(st);}function gv(rx){var m=kpiOv.match(rx);return m?parseInt(m[1]):undefined;}kpiData.sm=gv(/(\d+)\s+Scene Motion/i);kpiData.bc=gv(/(\d+)\s+Brand Cut-Through(?!\s+in\s+First)/i);kpiData.pt=gv(/(\d+)\s+Packaged Product Attention Over Time/i);kpiData.ar=gv(/(\d+)\s+Ad Recall Potential/i);kpiData.vs=gv(/(\d+)\s+Visual Simplicity/i);kpiData.rt=gv(/(\d+)\s+Enough Time to Read/i);kpiData.he=gv(/(\d+)\s+Human Element/i);kpiData.va=gv(/(\d+)\s+Activation Potential:\s*Visual/i);kpiData.ta=gv(/(\d+)\s+Activation Potential:\s*Text/i);kpiData.ep=gv(/(\d+)\s+Engagement Potential/i);var bin={eb:/Engaging Beginning.*?has enough movement/i.test(allText)&&!/has not enough movement/i.test(allText),sp:/Scene pace is.*?\d+\.?\d*\s+which is\s+above benchmark/i.test(allText),bf:/Brand Cut-Through in First Seconds.*?The brand attracts enough attention/i.test(allText),pf:/Packaged Product Cut-Through in First Seconds.*?The product attracts enough attention in the first \d+ seconds/i.test(allText),ar:/Ideal Aspect Ratio.*?The video respects the ideal aspect ratio/i.test(allText)&&!/does not respect/i.test(allText),so:/Ideal Sound Setting.*?The video respects the ideal audio settings/i.test(allText)&&!/does not respect/i.test(allText),ct:/Call-to-Action Cut-Through.*?Call-to-action cuts through above norm in none/i.test(allText)};var cats=mkCats();function applyT(kpi,t){if(t){kpi.thresholds=t;kpi.hasAmber=t.hasAmber;}}applyT(cats.attention.kpis[2],thresh.sm);applyT(cats.branding.kpis[0],thresh.bc);applyT(cats.branding.kpis[2],thresh.pt);applyT(cats.processing.kpis[0],thresh.ar);applyT(cats.processing.kpis[1],thresh.vs);applyT(cats.processing.kpis[3],thresh.rt);applyT(cats.emotional.kpis[0],thresh.he);applyT(cats.emotional.kpis[1],thresh.va);applyT(cats.emotional.kpis[2],thresh.ta);applyT(cats.persuasion.kpis[1],thresh.ep);function applyN(kpi,val){if(val!==undefined){kpi.value=val;kpi.original=detColor(val,kpi.thresholds);}}applyN(cats.attention.kpis[2],kpiData.sm);applyN(cats.branding.kpis[0],kpiData.bc);applyN(cats.branding.kpis[2],kpiData.pt);applyN(cats.processing.kpis[0],kpiData.ar);applyN(cats.processing.kpis[1],kpiData.vs);applyN(cats.processing.kpis[3],kpiData.rt);applyN(cats.emotional.kpis[0],kpiData.he);applyN(cats.emotional.kpis[1],kpiData.va);applyN(cats.emotional.kpis[2],kpiData.ta);applyN(cats.persuasion.kpis[1],kpiData.ep);function applyB(kpi,val){kpi.original=val?"green":"red";kpi.value=val?"✓":"✗";}applyB(cats.attention.kpis[0],bin.eb);applyB(cats.attention.kpis[1],bin.sp);applyB(cats.branding.kpis[1],bin.bf);applyB(cats.branding.kpis[3],bin.pf);applyB(cats.processing.kpis[2],bin.ar);applyB(cats.processing.kpis[4],bin.so);cats.persuasion.kpis[0].original=bin.ct?"red":"green";cats.persuasion.kpis[0].value=bin.ct?"✗":"✓";return{categories:cats,assetInfo:{name:assetName,date:assetDate,company:company,brand:brand,platform:platform,thumbnail:thumbUrl}};}
 
+// ============ PROJECT SETUP MODAL ============
+var psState = {
+step: 1,
+editingProjectId: null,
+name: '',
+company: 'Unilever',
+brand: '',
+market: '',
+businessGroup: '',
+category: '',
+defaultLanguage: 'English',
+additionalLanguages: [],
+phases: [],
+audiences: [],
+phaseChannels: {}
+};
+
+var DEFAULT_CHANNELS = [
+{name: 'OLV 15', test: 'YouTube In-Stream', cta: false},
+{name: 'OLV 6', formats: [{name: '16x9', test: 'YouTube In-Stream', cta: false}, {name: '9x16', test: 'YouTube Short', cta: true}]},
+{name: 'Meta', formats: [{name: 'Story', test: 'Instagram Story', cta: true}, {name: 'Feed', test: 'Instagram Feed', cta: true}]},
+{name: 'TikTok', test: 'TikTok', cta: true},
+{name: 'Snapchat', test: 'Snapchat', cta: true},
+{name: 'Pinterest', test: null, cta: false},
+{name: 'Display', test: null, cta: false}
+];
+
+function showProjectSetupModal(projectId) {
+psState.editingProjectId = projectId || null;
+psState.step = 1;
+
+if (projectId) {
+  document.getElementById('ps-modal-title').textContent = 'Edit Project Settings';
+  loadProjectConfig(projectId);
+} else {
+  document.getElementById('ps-modal-title').textContent = 'New Project Setup';
+  resetProjectSetupState();
+}
+
+renderPsStep();
+document.getElementById('project-setup-modal').style.display = 'block';
+}
+
+function closeProjectSetup() {
+document.getElementById('project-setup-modal').style.display = 'none';
+resetProjectSetupState();
+}
+
+function resetProjectSetupState() {
+psState.name = '';
+psState.company = 'Unilever';
+psState.brand = '';
+psState.market = '';
+psState.businessGroup = '';
+psState.category = '';
+psState.defaultLanguage = 'English';
+psState.additionalLanguages = [];
+psState.phases = ['Reach', 'Action'];
+psState.audiences = [];
+psState.phaseChannels = {};
+}
+
+async function loadProjectConfig(projectId) {
+var config = await api('/api/folders/' + projectId + '/config');
+var project = state.folders.find(function(f) { return f.id === projectId; });
+
+if (project) psState.name = project.name;
+if (config.identity) {
+  psState.company = config.identity.company || 'Unilever';
+  psState.brand = config.identity.brand || '';
+  psState.market = config.identity.market || '';
+  psState.businessGroup = config.identity.businessGroup || '';
+  psState.category = config.identity.category || '';
+  psState.defaultLanguage = config.identity.defaultLanguage || 'English';
+  psState.additionalLanguages = config.identity.additionalLanguages || [];
+}
+if (config.org) {
+  psState.phases = config.org.phases || ['Reach', 'Action'];
+  psState.audiences = config.org.audiences || [];
+}
+psState.phaseChannels = config.phaseChannels || {};
+}
+
+function renderPsStep() {
+document.getElementById('ps-step-1').style.display = psState.step === 1 ? 'block' : 'none';
+document.getElementById('ps-step-2').style.display = psState.step === 2 ? 'block' : 'none';
+document.getElementById('ps-step-3').style.display = psState.step === 3 ? 'block' : 'none';
+
+document.getElementById('ps-back-btn').style.display = psState.step > 1 ? 'block' : 'none';
+document.getElementById('ps-next-btn').textContent = psState.step === 3 ? 'Save & Generate Folders' : 'Next →';
+
+if (psState.step === 1) renderPsStep1();
+if (psState.step === 2) renderPsStep2();
+if (psState.step === 3) renderPsStep3();
+}
+
+function renderPsStep1() {
+// Capture current values before re-rendering
+if (document.getElementById('ps-name')) {
+  psState.name = document.getElementById('ps-name').value || psState.name;
+  psState.brand = document.getElementById('ps-brand').value || psState.brand;
+  psState.market = document.getElementById('ps-market').value || psState.market;
+  psState.businessGroup = document.getElementById('ps-bg').value || psState.businessGroup;
+  psState.category = document.getElementById('ps-category').value || psState.category;
+  psState.defaultLanguage = document.getElementById('ps-lang').value || psState.defaultLanguage;
+}
+
+document.getElementById('ps-name').value = psState.name;
+document.getElementById('ps-brand').value = psState.brand;
+document.getElementById('ps-market').value = psState.market;
+document.getElementById('ps-bg').value = psState.businessGroup;
+document.getElementById('ps-category').value = psState.category;
+document.getElementById('ps-lang').value = psState.defaultLanguage;
+
+document.getElementById('ps-company').innerHTML = ['Unilever', 'Competitor'].map(function(c) {
+  return '<button class="pill' + (psState.company === c ? ' active' : '') + '" onclick="psState.company=\'' + c + '\';renderPsStep1()">' + c + '</button>';
+}).join('');
+
+var wrap = document.getElementById('ps-addlang-wrap');
+wrap.querySelectorAll('.tag-pill').forEach(function(p) { p.remove(); });
+var input = document.getElementById('ps-addlang-input');
+psState.additionalLanguages.forEach(function(lang) {
+  var pill = document.createElement('span');
+  pill.className = 'tag-pill';
+  pill.innerHTML = lang + '<span class="tag-pill-x" onclick="psRemoveAddLang(\'' + lang + '\')">×</span>';
+  wrap.insertBefore(pill, input);
+});
+}
+
+function psAddLangKey(e) {
+if (e.key === 'Enter' || e.key === ',') {
+  e.preventDefault();
+  var val = document.getElementById('ps-addlang-input').value.trim().replace(',', '');
+  if (val && psState.additionalLanguages.indexOf(val) === -1) {
+    psState.additionalLanguages.push(val);
+    document.getElementById('ps-addlang-input').value = '';
+    renderPsStep1();
+  }
+}
+if (e.key === 'Backspace' && !document.getElementById('ps-addlang-input').value && psState.additionalLanguages.length) {
+  psState.additionalLanguages.pop();
+  renderPsStep1();
+}
+}
+
+function psRemoveAddLang(lang) {
+psState.additionalLanguages = psState.additionalLanguages.filter(function(l) { return l !== lang; });
+renderPsStep1();
+}
+
+function renderPsStep2() {
+var commonPhases = ['Tease', 'Reach', 'Action'];
+document.getElementById('ps-phases-pills').innerHTML = psState.phases.map(function(p) {
+  return '<button class="pill active" onclick="psRemovePhase(\'' + p + '\')">' + p + ' ×</button>';
+}).join('') + commonPhases.filter(function(p) { return psState.phases.indexOf(p) === -1; }).map(function(p) {
+  return '<button class="pill" onclick="psAddPhase(\'' + p + '\')">' + p + '</button>';
+}).join('');
+
+var wrap = document.getElementById('ps-audience-wrap');
+wrap.querySelectorAll('.tag-pill').forEach(function(p) { p.remove(); });
+var input = document.getElementById('ps-audience-input');
+psState.audiences.forEach(function(aud) {
+  var pill = document.createElement('span');
+  pill.className = 'tag-pill';
+  pill.innerHTML = aud + '<span class="tag-pill-x" onclick="psRemoveAudience(\'' + aud + '\')">×</span>';
+  wrap.insertBefore(pill, input);
+});
+}
+
+function psAddPhase(phase) {
+if (psState.phases.indexOf(phase) === -1) {
+  psState.phases.push(phase);
+  renderPsStep2();
+}
+}
+
+function psRemovePhase(phase) {
+psState.phases = psState.phases.filter(function(p) { return p !== phase; });
+renderPsStep2();
+}
+
+function psAddPhaseKey(e) {
+if (e.key === 'Enter') {
+  e.preventDefault();
+  var val = document.getElementById('ps-phase-input').value.trim();
+  if (val) {
+    psAddPhase(val);
+    document.getElementById('ps-phase-input').value = '';
+  }
+}
+}
+
+function psAddAudienceKey(e) {
+if (e.key === 'Enter' || e.key === ',') {
+  e.preventDefault();
+  var val = document.getElementById('ps-audience-input').value.trim().replace(',', '');
+  if (val && psState.audiences.indexOf(val) === -1) {
+    psState.audiences.push(val);
+    document.getElementById('ps-audience-input').value = '';
+    renderPsStep2();
+  }
+}
+if (e.key === 'Backspace' && !document.getElementById('ps-audience-input').value && psState.audiences.length) {
+  psState.audiences.pop();
+  renderPsStep2();
+}
+}
+
+function psRemoveAudience(aud) {
+psState.audiences = psState.audiences.filter(function(a) { return a !== aud; });
+renderPsStep2();
+}
+
+function renderPsStep3() {
+var container = document.getElementById('ps-channels-container');
+var html = '';
+
+psState.phases.forEach(function(phase) {
+  if (!psState.phaseChannels[phase]) {
+    psState.phaseChannels[phase] = JSON.parse(JSON.stringify(DEFAULT_CHANNELS));
+  }
+  
+  html += '<div style="margin-bottom:24px"><div class="tag-label" style="margin-bottom:10px">' + phase + ' Channels</div>';
+  
+  psState.phaseChannels[phase].forEach(function(ch, chIdx) {
+    var chId = 'ch-' + phase + '-' + chIdx;
+    var checked = ch.enabled !== false ? 'checked' : '';
+    
+    html += '<div style="border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:8px;background:' + (ch.enabled !== false ? 'white' : '#f8fafc') + '">';
+    html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:' + (ch.formats ? '8px' : '0') + '">';
+    html += '<input type="checkbox" id="' + chId + '" ' + checked + ' onchange="psToggleChannel(\'' + phase + '\',' + chIdx + ',this.checked)" style="width:18px;height:18px;cursor:pointer">';
+    html += '<label for="' + chId + '" style="font-size:13px;font-weight:600;cursor:pointer;flex:1">' + ch.name + '</label>';
+    if (ch.test) html += '<span style="font-size:11px;color:#94a3b8">→ ' + ch.test + '</span>';
+    if (ch.test === null) html += '<span style="font-size:11px;color:#94a3b8;font-style:italic">No test</span>';
+    html += '</div>';
+    
+    if (ch.formats && ch.enabled !== false) {
+      html += '<div style="margin-left:28px;display:flex;flex-direction:column;gap:4px">';
+      ch.formats.forEach(function(fmt, fIdx) {
+        var fId = 'fmt-' + phase + '-' + chIdx + '-' + fIdx;
+        var fChecked = fmt.enabled !== false ? 'checked' : '';
+        html += '<div style="display:flex;align-items:center;gap:8px">';
+        html += '<input type="checkbox" id="' + fId + '" ' + fChecked + ' onchange="psToggleFormat(\'' + phase + '\',' + chIdx + ',' + fIdx + ',this.checked)" style="width:16px;height:16px;cursor:pointer">';
+        html += '<label for="' + fId + '" style="font-size:12px;cursor:pointer;flex:1">' + fmt.name + '</label>';
+        html += '<span style="font-size:10px;color:#94a3b8">→ ' + fmt.test + '</span>';
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+    
+    html += '</div>';
+  });
+  
+  html += '</div>';
+});
+
+container.innerHTML = html;
+}
+
+function psToggleChannel(phase, chIdx, enabled) {
+psState.phaseChannels[phase][chIdx].enabled = enabled;
+renderPsStep3();
+}
+
+function psToggleFormat(phase, chIdx, fIdx, enabled) {
+psState.phaseChannels[phase][chIdx].formats[fIdx].enabled = enabled;
+renderPsStep3();
+}
+
+function psStepBack() {
+if (psState.step > 1) {
+  psState.step--;
+  renderPsStep();
+}
+}
+
+function psStepNext() {
+if (psState.step === 1) {
+  psState.name = document.getElementById('ps-name').value.trim();
+  psState.brand = document.getElementById('ps-brand').value.trim();
+  psState.market = document.getElementById('ps-market').value.trim();
+  psState.businessGroup = document.getElementById('ps-bg').value.trim();
+  psState.category = document.getElementById('ps-category').value.trim();
+  psState.defaultLanguage = document.getElementById('ps-lang').value.trim();
+  
+  if (!psState.name || !psState.company || !psState.brand || !psState.market || !psState.defaultLanguage) {
+    alert('Please fill in all required fields (marked with *)');
+    return;
+  }
+  psState.step = 2;
+  renderPsStep();
+} else if (psState.step === 2) {
+  if (psState.phases.length === 0) {
+    alert('Please select at least one phase');
+    return;
+  }
+  psState.step = 3;
+  renderPsStep();
+} else if (psState.step === 3) {
+  saveProjectSetup();
+}
+}
+
+async function saveProjectSetup() {
+var config = {
+  identity: {
+    company: psState.company,
+    brand: psState.brand,
+    market: psState.market,
+    businessGroup: psState.businessGroup,
+    category: psState.category,
+    defaultLanguage: psState.defaultLanguage,
+    additionalLanguages: psState.additionalLanguages
+  },
+  org: {
+    phases: psState.phases,
+    audiences: psState.audiences
+  },
+  phaseChannels: psState.phaseChannels
+};
+
+var projectId = psState.editingProjectId;
+
+if (!projectId) {
+  var res = await api('/api/folders', {
+    method: 'POST',
+    body: JSON.stringify({name: psState.name, parent_id: null})
+  });
+  projectId = res.id;
+} else {
+  await api('/api/folders/' + projectId, {
+    method: 'PUT',
+    body: JSON.stringify({name: psState.name})
+  });
+}
+
+await api('/api/folders/' + projectId + '/config', {
+  method: 'PUT',
+  body: JSON.stringify({config: config})
+});
+
+await generateManagedFolders(projectId, config);
+
+closeProjectSetup();
+await loadFolders();
+renderHome();
+}
+
+async function generateManagedFolders(projectId, config) {
+for (var i = 0; i < config.org.phases.length; i++) {
+  var phase = config.org.phases[i];
+  var channels = config.phaseChannels[phase] || [];
+  
+  var phaseRes = await api('/api/folders', {
+    method: 'POST',
+    body: JSON.stringify({
+      name: phase,
+      parent_id: projectId,
+      is_managed: 1
+    })
+  });
+  
+  for (var j = 0; j < channels.length; j++) {
+    var ch = channels[j];
+    if (ch.enabled === false) continue;
+    
+    if (ch.formats) {
+      var chRes = await api('/api/folders', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: ch.name,
+          parent_id: phaseRes.id,
+          is_managed: 1
+        })
+      });
+      
+      for (var k = 0; k < ch.formats.length; k++) {
+        var fmt = ch.formats[k];
+        if (fmt.enabled === false) continue;
+        
+        await api('/api/folders', {
+          method: 'POST',
+          body: JSON.stringify({
+            name: fmt.name,
+            parent_id: chRes.id,
+            is_managed: 1,
+            brainsuite_test: fmt.test,
+            cta: fmt.cta ? 1 : 0
+          })
+        });
+      }
+    } else {
+      await api('/api/folders', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: ch.name,
+          parent_id: phaseRes.id,
+          is_managed: 1,
+          brainsuite_test: ch.test,
+          cta: ch.cta ? 1 : 0
+        })
+      });
+    }
+  }
+}
+}
+
 async function init(){await loadFolders();showHome();}
 
 async function refreshAssetsData(){var url=state.folderId?"/api/assets?folder_id="+state.folderId:"/api/assets";state.assets=await api(url);}
 
 function editAssetTags(){
-  var asset=state.currentAsset.asset;var version=state.currentAsset.versions.find(function(v){return v.is_latest;})||state.currentAsset.versions[0];
-  tagState.assetId=asset.id;tagState.baseName=asset.base_name;tagState.projectId=state.projectId;
-  tagState.phase=asset.phase||null;tagState.platform=asset.platform||null;tagState.format=asset.format||null;tagState.isMaster=!!asset.is_master;
-  try{tagState.audienceTags=JSON.parse(asset.audience_tags||'[]');}catch(e){tagState.audienceTags=[];}
-  var vid=document.getElementById("tag-video");vid.src=version.video_filename?"/uploads/videos/"+version.video_filename:"";vid.load();vid.play().catch(function(){});
-  document.getElementById("tag-display-name").value=asset.display_name||asset.base_name;document.getElementById("tag-master").checked=!!asset.is_master;document.getElementById("tag-text-input").value="";hideSuggestions();
-  api("/api/tags?project_id="+state.projectId).then(function(tags){tagState.suggestions=tags||[];});
-  renderTagPills();renderAudienceTags();validateTagForm();document.getElementById("tag-modal").style.display="block";
+var asset=state.currentAsset.asset;var version=state.currentAsset.versions.find(function(v){return v.is_latest;})||state.currentAsset.versions[0];
+tagState.assetId=asset.id;tagState.baseName=asset.base_name;tagState.projectId=state.projectId;
+tagState.phase=asset.phase||null;tagState.platform=asset.platform||null;tagState.format=asset.format||null;tagState.isMaster=!!asset.is_master;
+tagState.contentOrigin=asset.content_origin||'Brand';
+tagState.language=asset.language||null;
+try{tagState.audienceTags=JSON.parse(asset.audience_tags||'[]');}catch(e){tagState.audienceTags=[];}
+
+// Load project config
+api('/api/folders/' + state.projectId + '/config').then(function(config) {
+  tagState.projectConfig = config;
+  renderTagModal();
+});
+
+var vid=document.getElementById("tag-video");vid.src=version.video_filename?"/uploads/videos/"+version.video_filename:"";vid.load();vid.play().catch(function(){});
+document.getElementById("tag-display-name").value=asset.display_name||asset.base_name;
+document.getElementById("tag-master").checked=!!asset.is_master;
+
+document.getElementById("tag-modal").style.display="block";
+}
+function formatDuration(s){if(!s)return'';var m=Math.floor(s/60),sec=Math.floor(s%60);return m+':'+(sec<10?'0':'')+sec;}
+
+function hideSuggestions(){
+// Empty stub - suggestions feature removed
 }
 
 init();
