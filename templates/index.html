@@ -235,6 +235,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 font-family: 'Figtree', sans-serif;
 }
 .cdur{font-size:11px;color:#94a3b8;margin-left:auto}
+.folder-card-ghost-input{border-radius:10px;border:2px solid #6366f1;display:flex;align-items:center;justify-content:center;min-height:160px;padding:16px;background:white}
+.finput-inline{width:100%;padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:13px;color:#1e293b;text-align:center;font-family:inherit;background:#f8fafc}
+.finput-inline:focus{outline:none;border-color:#6366f1;background:white}
+.grid:not(.overview-mode){display:flex;flex-direction:column;padding:0}
+.folders-section{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;padding:0 24px 16px}
+.assets-section{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;padding:0 24px 24px}
 </style>
 </head>
 <body>
@@ -259,7 +265,6 @@ font-family: 'Figtree', sans-serif;
       <div class="finput-row" id="finput-row" style="display:none">
         <input class="finput" id="finput" placeholder="Folder name..." onkeydown="handleFolderKey(event)">
       </div>
-      <button class="addbtn" onclick="showFolderInput()">+ New Folder</button>
     </div>
     <div class="main">
       <div id="grid-view">
@@ -596,7 +601,7 @@ function renderBreadcrumb() {
   bc.innerHTML=html;
   document.getElementById("mtitle").textContent=path.length?path[path.length-1].name:(project?project.name:'');
   var isOverview = state.folderId === state.projectId;
-btns.innerHTML=(isOverview?'<button class="btn btn-ghost" onclick="showProjectSetupModal('+state.projectId+')">⚙️ Edit Brief</button>':'')+'<button class="btn btn-ghost" onclick="showFolderInput()">+ Folder</button><button class="btn btn-primary" onclick="showUpload()">⬆ Upload</button>';
+btns.innerHTML=(isOverview?'<button class="btn btn-ghost" onclick="showProjectSetupModal('+state.projectId+')">⚙️ Edit Brief</button>':'<button class="btn btn-ghost" onclick="showInlineFolderInput()">+ Add Folder</button>')+'<button class="btn btn-primary" onclick="showUpload()">⬆ Upload</button>';
 }
 
 function renderSidebar() {
@@ -705,25 +710,26 @@ hdrEl.innerHTML='<div class="ov-proj-row"><div class="ov-proj-name">'+(project?p
   var groups={},untaggedArr=[];
   filtered.forEach(function(x){var p=getAssetPath(x);if(!p)untaggedArr.push(x);else{if(!groups[p])groups[p]=[];groups[p].push(x);}});
   var html='';
-  Object.keys(groups).sort().forEach(function(path){var assets=groups[path];html+='<div class="overview-section"><div class="overview-hdr"><span class="overview-path">'+path.toUpperCase()+'</span><span class="overview-count">'+assets.length+' asset'+(assets.length!==1?'s':'')+'</span></div><div class="overview-grid">'+assets.map(makeCard).join('')+'</div></div>';});
-  if(untaggedArr.length)html+='<div class="overview-section"><div class="overview-hdr"><span class="overview-path">UNTAGGED</span><span class="overview-count">'+untaggedArr.length+' asset'+(untaggedArr.length!==1?'s':'')+'</span></div><div class="overview-grid">'+untaggedArr.map(makeCard).join('')+'</div></div>';
+  Object.keys(groups).sort().forEach(function(path){var assets=sortedByMaster(groups[path]);html+='<div class="overview-section"><div class="overview-hdr"><span class="overview-path">'+path.toUpperCase()+'</span><span class="overview-count">'+assets.length+' asset'+(assets.length!==1?'s':'')+'</span></div><div class="overview-grid">'+assets.map(makeCard).join('')+'</div></div>';});
+if(untaggedArr.length){var sortedUntagged=sortedByMaster(untaggedArr);html+='<div class="overview-section"><div class="overview-hdr"><span class="overview-path">UNTAGGED</span><span class="overview-count">'+untaggedArr.length+' asset'+(untaggedArr.length!==1?'s':'')+'</span></div><div class="overview-grid">'+sortedUntagged.map(makeCard).join('')+'</div></div>';}
   if(!html)html='<div style="padding:60px 24px;text-align:center;color:#94a3b8"><div style="font-size:48px;margin-bottom:16px">🔍</div><div style="font-size:16px;font-weight:600;color:#64748b;margin-bottom:8px">No assets match this filter</div></div>';
   grid.innerHTML=html;
   grid.querySelectorAll(".card[data-video]").forEach(function(card){if(card.dataset.video)initCardPreview(card);});
 }
 
 function renderGrid() {
-  document.querySelector(".mtoolbar").style.display="";
-  document.getElementById("overview-proj-hdr").style.display="none";
-  document.getElementById("filter-bar").style.display="none";
-  var grid=document.getElementById("grid");
-  grid.classList.remove("overview-mode");
-  var subFolders=state.folders.filter(function(f){return f.parent_id===state.folderId;});
-  var parts=[]; if(subFolders.length)parts.push(subFolders.length+" folder"+(subFolders.length!==1?"s":"")); if(state.assets.length)parts.push(state.assets.length+" asset"+(state.assets.length!==1?"s":""));
-  document.getElementById("mcount").textContent=parts.join(", ");
-  if(!subFolders.length&&!state.assets.length){grid.innerHTML='<div class="empty"><div class="eicon">📁</div><div class="etitle">This folder is empty</div><div class="esub">Upload a video or create a sub-folder</div></div>';return;}
-  grid.innerHTML=subFolders.map(makeFolderCard).join("")+state.assets.map(makeCard).join("");
-  grid.querySelectorAll(".card[data-video]").forEach(function(card){if(card.dataset.video)initCardPreview(card);});
+document.querySelector(".mtoolbar").style.display="";
+document.getElementById("overview-proj-hdr").style.display="none";
+document.getElementById("filter-bar").style.display="none";
+var grid=document.getElementById("grid");
+grid.classList.remove("overview-mode");
+var subFolders=state.folders.filter(function(f){return f.parent_id===state.folderId;});
+var parts=[]; if(subFolders.length)parts.push(subFolders.length+" folder"+(subFolders.length!==1?"s":"")); if(state.assets.length)parts.push(state.assets.length+" asset"+(state.assets.length!==1?"s":""));
+document.getElementById("mcount").textContent=parts.join(", ");
+var foldersHtml=subFolders.length?'<div class="folders-section">'+subFolders.map(makeFolderCard).join('')+'</div>':'';
+var assetsHtml=state.assets.length?'<div class="assets-section">'+sortedByMaster(state.assets).map(makeCard).join('')+'</div>':'';
+grid.innerHTML=foldersHtml+assetsHtml;
+grid.querySelectorAll(".card[data-video]").forEach(function(card){if(card.dataset.video)initCardPreview(card);});
 }
 
 function makeFolderCard(folder) {
@@ -754,6 +760,35 @@ h+='<div class="cbody"><div class="cname" title="'+displayName+'">'+displayName+
 h+='<div class="cmeta"><span class="vtag">v'+(a.latest_version||1)+'</span><span class="cdate">'+date+'</span>'+(dur?'<span class="cdur">'+dur+'</span>':'')+'</div>';
 h+=tagsHtml;
 h+='</div></div>';return h;
+}
+function showInlineFolderInput(){
+if(document.getElementById('inline-folder-input'))return;
+var inputCard='<div class="folder-card-ghost-input" id="inline-folder-card"><input type="text" id="inline-folder-input" class="finput-inline" placeholder="Folder name..." onkeydown="handleInlineFolderKey(event)"></div>';
+var section=document.querySelector('.folders-section');
+if(section){
+  section.insertAdjacentHTML('beforeend',inputCard);
+} else {
+  var grid=document.getElementById('grid');
+  var assetsSection=document.querySelector('.assets-section');
+  var newSection=document.createElement('div');
+  newSection.className='folders-section';
+  newSection.innerHTML=inputCard;
+  if(assetsSection){grid.insertBefore(newSection,assetsSection);}
+  else{grid.insertAdjacentHTML('afterbegin','<div class="folders-section">'+inputCard+'</div>');}
+}
+document.getElementById('inline-folder-input').focus();
+}
+
+function handleInlineFolderKey(e){
+if(e.key==='Enter'){var name=document.getElementById('inline-folder-input').value.trim();if(name)saveInlineFolder(name);else renderGrid();}
+if(e.key==='Escape')renderGrid();
+}
+
+async function saveInlineFolder(name){
+await api('/api/folders',{method:'POST',body:JSON.stringify({name:name,parent_id:state.folderId})});
+await loadFolders();
+renderGrid();
+renderSidebar();
 }
 
 function showFolderInput(){document.getElementById("finput-row").style.display="block";document.getElementById("finput").focus();}
@@ -1753,6 +1788,14 @@ document.getElementById("tag-master").checked=!!asset.is_master;
 document.getElementById("tag-modal").style.display="block";
 }
 function formatDuration(s){if(!s)return'';var m=Math.floor(s/60),sec=Math.floor(s%60);return m+':'+(sec<10?'0':'')+sec;}
+
+function sortedByMaster(assets){
+return assets.slice().sort(function(a,b){
+  var am=a.is_master?1:0;
+  var bm=b.is_master?1:0;
+  return bm-am;
+});
+}
 
 function hideSuggestions(){
 // Empty stub - suggestions feature removed
