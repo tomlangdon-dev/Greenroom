@@ -241,6 +241,14 @@ font-family: 'Figtree', sans-serif;
 .grid:not(.overview-mode){display:flex;flex-direction:column;padding:0}
 .folders-section{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;padding:0 24px 16px}
 .assets-section{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;padding:0 24px 24px}
+.home-hero{height:50vh;min-height:280px;position:sticky;top:0;z-index:0;overflow:hidden;flex-shrink:0}
+.hero-video{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover}
+.hero-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.55)}
+.hero-content{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+.hero-wordmark{font-family:'Figtree',sans-serif;font-size:42px;font-weight:800;color:white;letter-spacing:-0.5px}
+.home-content{position:relative;z-index:1;background:#f1f5f9}
+#home-compact-hdr{position:fixed;top:0;left:0;right:0;z-index:100;height:58px;background:white;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;padding:0 20px;justify-content:space-between;box-shadow:0 1px 3px rgba(0,0,0,.05);opacity:0;transform:translateY(-100%);transition:opacity .2s,transform .2s;pointer-events:none}
+#home-compact-hdr.visible{opacity:1;transform:translateY(0);pointer-events:auto}
 </style>
 </head>
 <body>
@@ -251,9 +259,21 @@ font-family: 'Figtree', sans-serif;
 </div>
 <div class="body">
   <div id="home-view">
-    <div class="home-toolbar"><div class="home-title">Projects</div></div>
-    <div class="project-grid" id="project-grid"></div>
+<div class="home-hero">
+  <video class="hero-video" autoplay muted loop playsinline>
+    <source src="/static/bg.mp4" type="video/mp4">
+  </video>
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <svg width="80" height="68" viewBox="0 0 110 93.6" fill="white" xmlns="http://www.w3.org/2000/svg"><path d="M78.6,79.1v-5.5H31.4v5.5h47.2ZM26.8,79.1v-7.8c0-1.3,1-2.3,2.3-2.3h51.8c1.3,0,2.3,1,2.3,2.3v7.8h15.1c1.3,0,2.3,1,2.3,2.3s-1,2.3-2.3,2.3H11.7c-1.3,0-2.3-1-2.3-2.3s1-2.3,2.3-2.3h15.1,0ZM35.2,27.2c-1.1-.6-1.5-2-.8-3.1.6-1.1,2-1.5,3.1-.8l8.3,4.8c1.1.6,1.5,2,.8,3.1-.6,1.1-2,1.5-3.1.8l-8.3-4.8ZM72.6,23.2c1.1-.6,2.5-.3,3.1.8.6,1.1.3,2.5-.8,3.1l-8.3,4.8c-1.1.6-2.5.3-3.1-.8-.6-1.1-.3-2.5.8-3.1l8.3-4.8ZM21.5,39.2c-.6-1.1-.3-2.5.8-3.1,1.1-.6,2.5-.3,3.1.8l7.4,12.9c.6,1.1.3,2.5-.8,3.1-1.1.6-2.5.3-3.1-.8l-7.4-12.9h0ZM84.5,36.9c.6-1.1,2-1.5,3.1-.8,1.1.6,1.5,2,.8,3.1l-7.4,12.9c-.6,1.1-2,1.5-3.1.8-1.1-.6-1.5-2-.8-3.1l7.4-12.9h0ZM12,21.6l5,6.3,9.2-9.2-6.3-5c-1.8-1.4-3.7-1.6-5.3-1.1h0c-.8.3-1.6.8-2.3,1.4-.6.6-1.1,1.4-1.4,2.3h0c-.5,1.7-.2,3.5,1.1,5.3h0ZM14.9,32.8l-6.6-8.3c-2.4-3.1-2.8-6.5-1.9-9.4h0c.5-1.7,1.4-3.1,2.5-4.2,1.1-1.1,2.5-2,4.1-2.5h0s0,0,0,0c2.9-1,6.4-.6,9.5,1.9l8.3,6.5c.1,0,.2.2.3.3.9.9.9,2.3,0,3.2l-12.8,12.8h0c0,0-.1.1-.2.2-1,.8-2.4.6-3.2-.4h0ZM101.6,24.4l-6.6,8.3c-.8,1-2.2,1.2-3.2.4,0,0-.1-.1-.2-.2h0l-12.8-12.8c-.9-.9-.9-2.3,0-3.2,0,0,.2-.2.3-.3l8.3-6.5c3.1-2.5,6.6-2.8,9.5-1.9h0s0,0,0,0c1.5.5,2.9,1.4,4.1,2.5,1.1,1.1,2,2.5,2.5,4.1h0c.9,3,.5,6.4-1.9,9.5h0ZM93.1,27.9l5-6.3c1.4-1.8,1.6-3.6,1.1-5.2h0c-.3-.9-.8-1.7-1.4-2.3-.6-.6-1.4-1.1-2.3-1.4h0c-1.6-.5-3.5-.3-5.3,1.1l-6.3,5,9.2,9.2h0ZM57.2,32.2l3.2,9.9h10.5c1.3,0,2.3,1,2.3,2.3s-.4,1.4-.9,1.9h0s-8.5,6.1-8.5,6.1l3.3,9.9c.4,1.2-.3,2.5-1.5,2.9-.8.3-1.6,0-2.2-.4l-8.3-6.1-8.5,6.2c-1,.7-2.4.5-3.2-.5-.4-.6-.5-1.4-.3-2.1h0l3.3-9.9-8.5-6.1c-1-.7-1.3-2.2-.5-3.2.5-.7,1.3-1,2-.9h10.3s3.2-9.9,3.2-9.9c.4-1.2,1.7-1.9,2.9-1.5.7.2,1.3.8,1.5,1.5h0ZM56.5,45.1l-1.5-4.8-1.5,4.8c-.3.9-1.2,1.6-2.2,1.6h-5s4.1,2.9,4.1,2.9c.8.6,1.1,1.6.8,2.6l-1.6,4.8,4-2.9c.8-.6,1.9-.6,2.7,0l4.1,3-1.5-4.7c-.3-.9,0-2,.8-2.6l4.1-3h-4.9c-1,0-2-.6-2.3-1.6h0Z"/></svg>
+    <div class="hero-wordmark">Greenroom</div>
   </div>
+</div>
+<div class="home-content">
+  <div class="home-toolbar"><div class="home-title">Projects</div><button class="btn btn-primary" onclick="newProject()">+ New Project</button></div>
+  <div class="project-grid" id="project-grid"></div>
+</div>
+</div>
   <div id="project-view">
     <div class="sidebar">
       <div class="sidebar-proj-hdr">
@@ -540,7 +560,9 @@ async function showHome() {
   document.getElementById("home-view").style.display="block";
   document.getElementById("project-view").style.display="none";
   document.getElementById("breadcrumb").innerHTML="";
-  document.getElementById("hdr-btns").innerHTML='<button class="btn btn-primary" onclick="newProject()">+ New Project</button>';
+document.getElementById("hdr-btns").innerHTML="";
+document.querySelector(".hdr").style.display="none";
+var ch=document.getElementById('home-compact-hdr');ch.style.display='';ch.classList.remove('visible');
   try { projectStats = await api("/api/projects/stats"); } catch(e) { projectStats={}; }
   renderHome();
 }
@@ -568,7 +590,8 @@ function renderHome() {
 async function newProject() {
 showProjectSetupModal();
 }
-function enterProject(id) { state.projectId=id; state.overviewFilter='all'; collapsedFolders.clear(); document.getElementById("home-view").style.display="none"; document.getElementById("project-view").style.display="flex"; loadAssets(id); }
+function enterProject(id) { state.projectId=id; state.overviewFilter='all'; collapsedFolders.clear(); document.getElementById("home-view").style.display="none"; document.getElementById("project-view").style.display="flex"; document.querySelector(".hdr").style.display="";
+var ch=document.getElementById('home-compact-hdr');ch.classList.remove('visible');ch.style.display='none'; loadAssets(id); }
 
 async function loadAssets(fid) {
   state.folderId=(fid!==undefined)?fid:null;
@@ -704,7 +727,7 @@ function renderOverview() {
   bands+='</div>';
   var filterDefs=[{v:'all',l:'All',c:''},{v:'notgreen',l:'Not Green',c:''},{v:'green',l:'Green',c:'f-green'},{v:'amber',l:'Amber',c:'f-amber'},{v:'red',l:'Red',c:'f-red'},{v:'unscored',l:'Unscored',c:'f-unscored'}];
 var filterHtml=filterDefs.map(function(f){return'<button class="filter-btn '+f.c+(state.overviewFilter===f.v?' active':'')+'" onclick="setOverviewFilter(\''+f.v+'\')">'+f.l+'</button>';}).join('');
-hdrEl.innerHTML='<div class="ov-proj-row"><div class="ov-proj-name">'+(project?project.name:'')+'</div>'+(t>0?bands:'')+'</div><div class="ov-filter-row">'+filterHtml+'</div>';
+hdrEl.innerHTML='<div class="ov-proj-row"><div class="ov-proj-name">'+(project?project.name:'')+'</div>'+(t>0?bands:'')+'</div>'+(t>0?'<div class="ov-filter-row">'+filterHtml+'</div>':'');
   var filterDefs=[{v:'all',l:'All',c:''},{v:'notgreen',l:'Not Green',c:''},{v:'green',l:'Green',c:'f-green'},{v:'amber',l:'Amber',c:'f-amber'},{v:'red',l:'Red',c:'f-red'},{v:'unscored',l:'Unscored',c:'f-unscored'}];
   var filtered=filterAssets(state.assets);
   var groups={},untaggedArr=[];
@@ -712,7 +735,13 @@ hdrEl.innerHTML='<div class="ov-proj-row"><div class="ov-proj-name">'+(project?p
   var html='';
   Object.keys(groups).sort().forEach(function(path){var assets=sortedByMaster(groups[path]);html+='<div class="overview-section"><div class="overview-hdr"><span class="overview-path">'+path.toUpperCase()+'</span><span class="overview-count">'+assets.length+' asset'+(assets.length!==1?'s':'')+'</span></div><div class="overview-grid">'+assets.map(makeCard).join('')+'</div></div>';});
 if(untaggedArr.length){var sortedUntagged=sortedByMaster(untaggedArr);html+='<div class="overview-section"><div class="overview-hdr"><span class="overview-path">UNTAGGED</span><span class="overview-count">'+untaggedArr.length+' asset'+(untaggedArr.length!==1?'s':'')+'</span></div><div class="overview-grid">'+sortedUntagged.map(makeCard).join('')+'</div></div>';}
-  if(!html)html='<div style="padding:60px 24px;text-align:center;color:#94a3b8"><div style="font-size:48px;margin-bottom:16px">🔍</div><div style="font-size:16px;font-weight:600;color:#64748b;margin-bottom:8px">No assets match this filter</div></div>';
+  if(!html){
+  if(state.assets.length===0){
+    html='<div class="empty"><div class="esub">Nothing here yet — drag something in or hit ⬆ Upload</div></div>';
+  } else {
+    html='<div style="padding:60px 24px;text-align:center;color:#94a3b8"><div style="font-size:48px;margin-bottom:16px">🔍</div><div style="font-size:16px;font-weight:600;color:#64748b;margin-bottom:8px">No assets match this filter</div></div>';
+  }
+}
   grid.innerHTML=html;
   grid.querySelectorAll(".card[data-video]").forEach(function(card){if(card.dataset.video)initCardPreview(card);});
 }
@@ -726,6 +755,10 @@ grid.classList.remove("overview-mode");
 var subFolders=state.folders.filter(function(f){return f.parent_id===state.folderId;});
 var parts=[]; if(subFolders.length)parts.push(subFolders.length+" folder"+(subFolders.length!==1?"s":"")); if(state.assets.length)parts.push(state.assets.length+" asset"+(state.assets.length!==1?"s":""));
 document.getElementById("mcount").textContent=parts.join(", ");
+if(!subFolders.length&&!state.assets.length){
+  grid.innerHTML='<div class="empty"><div class="esub">Nothing here yet — drag something in or hit ⬆ Upload</div></div>';
+  return;
+}
 var foldersHtml=subFolders.length?'<div class="folders-section">'+subFolders.map(makeFolderCard).join('')+'</div>':'';
 var assetsHtml=state.assets.length?'<div class="assets-section">'+sortedByMaster(state.assets).map(makeCard).join('')+'</div>':'';
 grid.innerHTML=foldersHtml+assetsHtml;
@@ -1302,6 +1335,13 @@ window.addEventListener("dragenter",function(e){if(state.draggingAssetId)return;
 window.addEventListener("dragleave",function(){if(state.draggingAssetId)return;dragCounter--;if(dragCounter<=0){dragCounter=0;document.getElementById("drag-overlay").classList.remove("active");}});
 window.addEventListener("dragover",function(e){e.preventDefault();});
 window.addEventListener("drop",function(e){e.preventDefault();dragCounter=0;document.getElementById("drag-overlay").classList.remove("active");if(state.draggingAssetId)return;if(document.getElementById("upload-modal").style.display==="block")return;if(document.getElementById("report-modal").style.display==="block")return;if(document.getElementById("tag-modal").style.display==="block")return;if(!state.projectId)return;var files=Array.from(e.dataTransfer.files);var video=files.find(function(f){return /\.(mp4|mov|avi|webm|mkv)$/i.test(f.name);});var pptx=files.find(function(f){return /\.pptx$/i.test(f.name);});if(!video&&!pptx)return;showUpload();if(video){uploadFiles.video=video;document.getElementById("video-fname").textContent="✓ "+video.name;}if(pptx){uploadFiles.pptx=pptx;document.getElementById("pptx-fname").textContent="✓ "+pptx.name;}});
+document.getElementById('home-view').addEventListener('scroll',function(){
+var hero=document.querySelector('.home-hero');
+var compact=document.getElementById('home-compact-hdr');
+if(!hero||!compact)return;
+if(this.scrollTop>hero.offsetHeight*0.4){compact.classList.add('visible');}
+else{compact.classList.remove('visible');}
+});
 
 function cardDragStart(e,id){state.draggingAssetId=id;e.dataTransfer.setData("assetId",id);e.dataTransfer.effectAllowed="move";var card=e.currentTarget,clone=card.cloneNode(true);clone.querySelectorAll("video").forEach(function(v){v.remove();});clone.style.transform="none";clone.style.width=card.offsetWidth+"px";clone.style.position="absolute";clone.style.top="-9999px";clone.style.opacity="0.85";document.body.appendChild(clone);e.dataTransfer.setDragImage(clone,e.offsetX,e.offsetY);setTimeout(function(){document.body.removeChild(clone);},0);}
 function cardDragEnd(){state.draggingAssetId=null;}
@@ -1803,5 +1843,7 @@ function hideSuggestions(){
 
 init();
 </script>
-
+<div id="home-compact-hdr">
+<div class="logo" onclick="showHome()"><svg width="22" height="19" viewBox="0 0 110 93.6" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M78.6,79.1v-5.5H31.4v5.5h47.2ZM26.8,79.1v-7.8c0-1.3,1-2.3,2.3-2.3h51.8c1.3,0,2.3,1,2.3,2.3v7.8h15.1c1.3,0,2.3,1,2.3,2.3s-1,2.3-2.3,2.3H11.7c-1.3,0-2.3-1-2.3-2.3s1-2.3,2.3-2.3h15.1,0ZM35.2,27.2c-1.1-.6-1.5-2-.8-3.1.6-1.1,2-1.5,3.1-.8l8.3,4.8c1.1.6,1.5,2,.8,3.1-.6,1.1-2,1.5-3.1.8l-8.3-4.8ZM72.6,23.2c1.1-.6,2.5-.3,3.1.8.6,1.1.3,2.5-.8,3.1l-8.3,4.8c-1.1.6-2.5.3-3.1-.8-.6-1.1-.3-2.5.8-3.1l8.3-4.8ZM21.5,39.2c-.6-1.1-.3-2.5.8-3.1,1.1-.6,2.5-.3,3.1.8l7.4,12.9c.6,1.1.3,2.5-.8,3.1-1.1.6-2.5.3-3.1-.8l-7.4-12.9h0ZM84.5,36.9c.6-1.1,2-1.5,3.1-.8,1.1.6,1.5,2,.8,3.1l-7.4,12.9c-.6,1.1-2,1.5-3.1.8-1.1-.6-1.5-2-.8-3.1l7.4-12.9h0ZM12,21.6l5,6.3,9.2-9.2-6.3-5c-1.8-1.4-3.7-1.6-5.3-1.1h0c-.8.3-1.6.8-2.3,1.4-.6.6-1.1,1.4-1.4,2.3h0c-.5,1.7-.2,3.5,1.1,5.3h0ZM14.9,32.8l-6.6-8.3c-2.4-3.1-2.8-6.5-1.9-9.4h0c.5-1.7,1.4-3.1,2.5-4.2,1.1-1.1,2.5-2,4.1-2.5h0s0,0,0,0c2.9-1,6.4-.6,9.5,1.9l8.3,6.5c.1,0,.2.2.3.3.9.9.9,2.3,0,3.2l-12.8,12.8h0c0,0-.1.1-.2.2-1,.8-2.4.6-3.2-.4h0ZM101.6,24.4l-6.6,8.3c-.8,1-2.2,1.2-3.2.4,0,0-.1-.1-.2-.2h0l-12.8-12.8c-.9-.9-.9-2.3,0-3.2,0,0,.2-.2.3-.3l8.3-6.5c3.1-2.5,6.6-2.8,9.5-1.9h0s0,0,0,0c1.5.5,2.9,1.4,4.1,2.5,1.1,1.1,2,2.5,2.5,4.1h0c.9,3,.5,6.4-1.9,9.5h0ZM93.1,27.9l5-6.3c1.4-1.8,1.6-3.6,1.1-5.2h0c-.3-.9-.8-1.7-1.4-2.3-.6-.6-1.4-1.1-2.3-1.4h0c-1.6-.5-3.5-.3-5.3,1.1l-6.3,5,9.2,9.2h0ZM57.2,32.2l3.2,9.9h10.5c1.3,0,2.3,1,2.3,2.3s-.4,1.4-.9,1.9h0s-8.5,6.1-8.5,6.1l3.3,9.9c.4,1.2-.3,2.5-1.5,2.9-.8.3-1.6,0-2.2-.4l-8.3-6.1-8.5,6.2c-1,.7-2.4.5-3.2-.5-.4-.6-.5-1.4-.3-2.1h0l3.3-9.9-8.5-6.1c-1-.7-1.3-2.2-.5-3.2.5-.7,1.3-1,2-.9h10.3s3.2-9.9,3.2-9.9c.4-1.2,1.7-1.9,2.9-1.5.7.2,1.3.8,1.5,1.5h0ZM56.5,45.1l-1.5-4.8-1.5,4.8c-.3.9-1.2,1.6-2.2,1.6h-5s4.1,2.9,4.1,2.9c.8.6,1.1,1.6.8,2.6l-1.6,4.8,4-2.9c.8-.6,1.9-.6,2.7,0l4.1,3-1.5-4.7c-.3-.9,0-2,.8-2.6l4.1-3h-4.9c-1,0-2-.6-2.3-1.6h0Z"/></svg> Greenroom</div>
+</div>
 </body></html>

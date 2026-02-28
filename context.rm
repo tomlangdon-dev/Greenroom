@@ -216,3 +216,5 @@ Stage 2 filter extensions	Filter by platform, phase, format, master status
 List view toggle	Alternative to card grid for dense folders
 Display asset support	HTML5 upload + framed playback (Path 1, separate project) or video proxy (Path 2, low effort if render pipeline exists)
 Static/image asset support	JPG/PNG for Meta/Pinterest statics alongside video
+Browser back button	No history.pushState() calls — browser has no navigation history. Fix: call pushState at each navigation point (home, project, folder, detail), listen for popstate to reverse. Moderate effort.
+Display asset grouping	Display creative typically arrives in sets of three sizes (MPU, Leader, Sky). Current upload flow handles each individually. Some friction reduction desirable — solution TBD.
