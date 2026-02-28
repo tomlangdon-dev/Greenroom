@@ -77,6 +77,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .score-band.sb-a{background:#f59e0b}
 .score-band.sb-r{background:#ef4444}
 .score-band.sb-u{background:#cbd5e0;color:#64748b}
+.score-band:only-child{border-radius:24px}
 .filter-bar{padding:12px 24px;display:none;gap:6px;flex-wrap:wrap;background:#f8fafc;border-bottom:1px solid #e2e8f0;flex-shrink:0}
 .filter-btn{padding:5px 12px;border-radius:16px;border:1.5px solid #e2e8f0;background:white;font-size:12px;font-weight:600;cursor:pointer;color:#64748b;transition:all .15s}
 .filter-btn:hover{border-color:#6366f1;color:#6366f1}
@@ -175,7 +176,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 .dz-icon{font-size:28px;margin-bottom:6px}
 .dz-title{font-size:13px;font-weight:600;color:#1e293b;margin-bottom:2px}
 .dz-sub{font-size:11px;color:#94a3b8}
-.dz-file{font-size:12px;font-weight:600;color:#6366f1;margin-top:6px;min-height:16px}
+.dz-file{font-size:12px;font-weight:600;color:#6366f1;margin-top:6px;min-height:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px}
 .upstatus{padding:10px 14px;border-radius:6px;font-size:13px;font-weight:500;text-align:center;margin-top:4px}
 .upstatus.info{background:#f0f9ff;color:#0369a1}
 .upstatus.success{background:#f0fdf4;color:#166534}
@@ -416,8 +417,9 @@ font-family: 'Figtree', sans-serif;
   <div class="ctx-item ctx-danger" onclick="var id=ctxId;hideCtx();deleteAssetCard(id)">🗑 Delete</div>
 </div>
 <div id="proj-ctx-menu">
-  <div class="ctx-item" onclick="renameProjCtx();hideProjCtx()">✏️ Rename project</div>
-  <div class="ctx-item ctx-danger" onclick="deleteProjCtx();hideProjCtx()">🗑 Delete project</div>
+<div class="ctx-item" onclick="editProjCtx();hideProjCtx()">⚙️ Edit Brief</div>
+<div class="ctx-item" onclick="renameProjCtx();hideProjCtx()">✏️ Rename project</div>
+<div class="ctx-item ctx-danger" onclick="deleteProjCtx();hideProjCtx()">🗑 Delete project</div>
 </div>
 <div id="project-setup-modal" style="display:none">
 <div class="modal-overlay">
@@ -516,7 +518,7 @@ var collapsedFolders = new Set();
 var PHASES = ['Reach','Action'];
 var PLATFORMS = ['Meta','Snapchat','TikTok','OLV','YouTube','Pinterest'];
 var FORMATS = ['4x5','9x16','16x9','1x1','2x3'];
-var tagState = { assetId:null, videoUrl:null, baseName:null, projectId:null, phase:null, platform:null, format:null, isMaster:false, audienceTags:[], suggestions:[] };
+var tagState = { assetId:null, videoUrl:null, baseName:null, projectId:null, phase:null, platform:null, format:null, isMaster:false, audienceTags:[] };
 var homeSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>';
 
 async function api(url, opts) {
@@ -593,7 +595,8 @@ function renderBreadcrumb() {
   path.forEach(function(item,i){html+='<span class="bc-sep">›</span>';html+=(i===path.length-1)?'<span class="bc-cur">'+item.name+'</span>':'<span class="bc-item" onclick="loadAssets('+item.id+')">'+item.name+'</span>';});
   bc.innerHTML=html;
   document.getElementById("mtitle").textContent=path.length?path[path.length-1].name:(project?project.name:'');
-  btns.innerHTML='<button class="btn btn-ghost" onclick="showFolderInput()">+ Folder</button><button class="btn btn-primary" onclick="showUpload()">⬆ Upload</button>';
+  var isOverview = state.folderId === state.projectId;
+btns.innerHTML=(isOverview?'<button class="btn btn-ghost" onclick="showProjectSetupModal('+state.projectId+')">⚙️ Edit Brief</button>':'')+'<button class="btn btn-ghost" onclick="showFolderInput()">+ Folder</button><button class="btn btn-primary" onclick="showUpload()">⬆ Upload</button>';
 }
 
 function renderSidebar() {
@@ -773,6 +776,10 @@ function showProjCtx(e,id){projCtxId=id;var m=document.getElementById("proj-ctx-
 function hideProjCtx(){document.getElementById("proj-ctx-menu").style.display="none";projCtxId=null;}
 async function renameProjCtx(){if(!projCtxId)return;var f=state.folders.find(function(x){return x.id===projCtxId;});var name=prompt("Rename project:",f?f.name:"");if(!name||name===(f&&f.name))return;await api("/api/folders/"+projCtxId,{method:"PUT",body:JSON.stringify({name:name})});await loadFolders();renderHome();}
 async function deleteProjCtx(){if(!projCtxId)return;var id=projCtxId;hideProjCtx();await safeDeleteFolder(id,async function(){await loadFolders();renderHome();});}
+function editProjCtx() {
+if (!projCtxId) return;
+showProjectSetupModal(projCtxId);
+}
 var folderCtxId=null;
 function showFolderCtx(e,id){e.preventDefault();e.stopPropagation();folderCtxId=id;var m=document.getElementById("folder-ctx-menu");m.style.display="block";m.style.left=e.clientX+"px";m.style.top=e.clientY+"px";var r=m.getBoundingClientRect();if(r.right>window.innerWidth)m.style.left=(e.clientX-r.width)+"px";if(r.bottom>window.innerHeight)m.style.top=(e.clientY-r.height)+"px";}
 function hideFolderCtx(){document.getElementById("folder-ctx-menu").style.display="none";folderCtxId=null;}
@@ -914,7 +921,6 @@ tagState.platform = null;
 tagState.format = null;
 tagState.isMaster = false;
 tagState.audienceTags = [];
-tagState.suggestions = [];
 tagState.contentOrigin = 'Brand';
 tagState.language = null;
 
@@ -1031,7 +1037,6 @@ return '<button class="pill' + (tagState.platform === p ? ' active' : '') + '" o
 
 // Build format list from project config for selected platform
 var formatOptions = [];
-var formatSection = document.getElementById('tag-section-format');
 
 if (tagState.platform && tagState.phase && config.phaseChannels && config.phaseChannels[tagState.phase]) {
 var channels = config.phaseChannels[tagState.phase];
@@ -1093,8 +1098,6 @@ if (configAudiences.length > 0) {
   audiencePillsEl.style.display = 'none';
 }
 }
-
-renderAudienceTags();
 validateTagForm();
 }
 function selectTag(field,val){
@@ -1102,16 +1105,6 @@ tagState[field]=tagState[field]===val?null:val;
 // Clear format if platform changed
 if (field === 'platform') tagState.format = null;
 renderTagModal();
-}
-function renderAudienceTags(){
-// Now handled by renderTagModal - audiences show as active pills in tag-audience-pills
-// This function can stay empty or be removed, but keeping it prevents errors if called elsewhere
-}
-function addAudienceTag(tag){
-tag=tag.trim();
-if(!tag||tagState.audienceTags.indexOf(tag)!==-1)return;
-tagState.audienceTags.push(tag);
-renderAudienceTags();
 }
 function toggleAudienceTag(tag) {
 if (tagState.audienceTags.length === 1 && tagState.audienceTags[0] === tag) {
@@ -1123,7 +1116,6 @@ if (tagState.audienceTags.length === 1 && tagState.audienceTags[0] === tag) {
 }
 renderTagModal(); // Re-render to update pill state
 }
-function removeAudienceTag(tag){tagState.audienceTags=tagState.audienceTags.filter(function(t){return t!==tag;});renderAudienceTags();}
 function validateTagForm() {
 var ctx = getFolderContext(state.folderId, tagState.projectId);
 var inManagedFolder = !!(ctx.phase || ctx.platform);
@@ -1247,11 +1239,6 @@ var wasInOverview = state.folderId === state.projectId;
 
 await loadFolders();
 
-// If asset moved to new folder, update folderId
-if(res.folder_id) {
-state.folderId = res.folder_id;
-}
-
 // Stay in overview if user uploaded from overview
 if (wasInOverview) {
 state.folderId = state.projectId;
@@ -1289,7 +1276,7 @@ async function folderDrop(e,folderId){e.preventDefault();folderDragLeave(e.curre
 
 function initCardPreview(card){var src=card.dataset.video;if(!src)return;var thumb=card.querySelector(".cthumb");var video=document.createElement("video");video.muted=true;video.playsInline=true;video.preload="none";video.style.cssText="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain;opacity:0;transition:opacity 0.15s;pointer-events:none;";thumb.appendChild(video);var loaded=false;card.addEventListener("mouseenter",function(){if(!loaded){video.src="/uploads/videos/"+src;video.load();loaded=true;}var bg=thumb.querySelector("img,.cph");if(bg)bg.style.opacity="0";video.style.opacity="1";});card.addEventListener("mousemove",function(e){if(!video.duration)return;var rect=thumb.getBoundingClientRect();video.currentTime=Math.max(0,Math.min(1,(e.clientX-rect.left)/rect.width))*video.duration;});card.addEventListener("mouseleave",function(){video.style.opacity="0";video.pause();var bg=thumb.querySelector("img,.cph");if(bg)bg.style.opacity="1";});card.addEventListener("dragstart",function(){video.style.opacity="0";var bg=thumb.querySelector("img,.cph");if(bg)bg.style.opacity="1";});}
 
-document.addEventListener("keydown",function(e){if(e.key==="Escape"){if(document.getElementById("detail-view").style.display!=="none"){closeDetail();return;}closeUpload();closeMoveModal();closeReportModal();hideCtx();hideProjCtx();hideFolderCtx();}});
+document.addEventListener("keydown",function(e){if(e.key==="Escape"){if(document.getElementById("detail-view").style.display!=="none"){closeDetail();return;}if(document.getElementById("project-setup-modal").style.display==="block"){closeProjectSetup();return;}closeUpload();closeMoveModal();closeReportModal();hideCtx();hideProjCtx();hideFolderCtx();hideManagedFolderCtx();}});
 
 function checkPair(videoName,pptxName){var vNorm=videoName.toLowerCase().replace(/[^a-z0-9]/g,"");var pNorm=pptxName.toLowerCase().replace(/[^a-z0-9]/g,"");if(pNorm.includes(vNorm))return true;var pCore=pptxName.toLowerCase().replace(/^ace[^_]*_/,"").replace(/_?\d{8}\.pptx$/,"").replace(/^[a-z]+_/,"").replace(/[^a-z0-9]/g,"");return pCore.length>4&&vNorm.includes(pCore);}
 
@@ -1329,16 +1316,16 @@ var DEFAULT_CHANNELS = [
 {name: 'Display', test: null, cta: false}
 ];
 
-function showProjectSetupModal(projectId) {
+async function showProjectSetupModal(projectId) {
 psState.editingProjectId = projectId || null;
 psState.step = 1;
+resetProjectSetupState();
 
 if (projectId) {
-  document.getElementById('ps-modal-title').textContent = 'Edit Project Settings';
-  loadProjectConfig(projectId);
+document.getElementById('ps-modal-title').textContent = 'Edit Project Settings';
+await loadProjectConfig(projectId);
 } else {
-  document.getElementById('ps-modal-title').textContent = 'New Project Setup';
-  resetProjectSetupState();
+document.getElementById('ps-modal-title').textContent = 'New Project Setup';
 }
 
 renderPsStep();
@@ -1643,75 +1630,107 @@ await api('/api/folders/' + projectId + '/config', {
   body: JSON.stringify({config: config})
 });
 
+if (psState.editingProjectId) {
+await loadFolders();
+await cleanupRemovedManagedFolders(projectId, config);
+}
 await generateManagedFolders(projectId, config);
 
 closeProjectSetup();
 await loadFolders();
+if (state.projectId) {
+await loadAssets(state.folderId);
+} else {
 renderHome();
+}
+}
+
+async function getOrCreateManagedFolder(name, parentId, extra) {
+var existing = state.folders.find(function(f) {
+return f.parent_id === parentId && f.name === name && f.is_managed;
+});
+if (existing) return existing.id;
+var body = Object.assign({name: name, parent_id: parentId, is_managed: 1}, extra || {});
+var res = await api('/api/folders', {method: 'POST', body: JSON.stringify(body)});
+state.folders.push({id: res.id, name: name, parent_id: parentId, is_managed: 1});
+return res.id;
 }
 
 async function generateManagedFolders(projectId, config) {
+await loadFolders();
 for (var i = 0; i < config.org.phases.length; i++) {
-  var phase = config.org.phases[i];
-  var channels = config.phaseChannels[phase] || [];
-  
-  var phaseRes = await api('/api/folders', {
-    method: 'POST',
-    body: JSON.stringify({
-      name: phase,
-      parent_id: projectId,
-      is_managed: 1
-    })
-  });
-  
-  for (var j = 0; j < channels.length; j++) {
-    var ch = channels[j];
-    if (ch.enabled === false) continue;
-    
-    if (ch.formats) {
-      var chRes = await api('/api/folders', {
-        method: 'POST',
-        body: JSON.stringify({
-          name: ch.name,
-          parent_id: phaseRes.id,
-          is_managed: 1
-        })
-      });
-      
-      for (var k = 0; k < ch.formats.length; k++) {
-        var fmt = ch.formats[k];
-        if (fmt.enabled === false) continue;
-        
-        await api('/api/folders', {
-          method: 'POST',
-          body: JSON.stringify({
-            name: fmt.name,
-            parent_id: chRes.id,
-            is_managed: 1,
-            brainsuite_test: fmt.test,
-            cta: fmt.cta ? 1 : 0
-          })
-        });
-      }
-    } else {
-      await api('/api/folders', {
-        method: 'POST',
-        body: JSON.stringify({
-          name: ch.name,
-          parent_id: phaseRes.id,
-          is_managed: 1,
-          brainsuite_test: ch.test,
-          cta: ch.cta ? 1 : 0
-        })
-      });
+var phase = config.org.phases[i];
+var channels = config.phaseChannels[phase] || [];
+var phaseId = await getOrCreateManagedFolder(phase, projectId);
+for (var j = 0; j < channels.length; j++) {
+  var ch = channels[j];
+  if (ch.enabled === false) continue;
+  if (ch.formats) {
+    var chId = await getOrCreateManagedFolder(ch.name, phaseId);
+    for (var k = 0; k < ch.formats.length; k++) {
+      var fmt = ch.formats[k];
+      if (fmt.enabled === false) continue;
+      await getOrCreateManagedFolder(fmt.name, chId, {brainsuite_test: fmt.test, cta: fmt.cta ? 1 : 0});
     }
+  } else {
+    await getOrCreateManagedFolder(ch.name, phaseId, {brainsuite_test: ch.test, cta: ch.cta ? 1 : 0});
   }
+}
 }
 }
 
 async function init(){await loadFolders();showHome();}
 
 async function refreshAssetsData(){var url=state.folderId?"/api/assets?folder_id="+state.folderId:"/api/assets";state.assets=await api(url);}
+
+async function cleanupRemovedManagedFolders(projectId, config) {
+var toDelete = [];
+
+var phaseFolders = state.folders.filter(function(f) {
+  return f.parent_id === projectId && f.is_managed;
+});
+
+phaseFolders.forEach(function(phaseFolder) {
+  if (config.org.phases.indexOf(phaseFolder.name) === -1) {
+    toDelete.push(phaseFolder.id);
+    return;
+  }
+  var channels = config.phaseChannels[phaseFolder.name] || [];
+  var enabledChannels = channels.filter(function(ch) { return ch.enabled !== false; }).map(function(ch) { return ch.name; });
+
+  state.folders.filter(function(f) { return f.parent_id === phaseFolder.id && f.is_managed; }).forEach(function(chFolder) {
+    if (enabledChannels.indexOf(chFolder.name) === -1) {
+      toDelete.push(chFolder.id);
+      return;
+    }
+    var chConfig = channels.find(function(c) { return c.name === chFolder.name; });
+    if (chConfig && chConfig.formats) {
+      var enabledFormats = chConfig.formats.filter(function(f) { return f.enabled !== false; }).map(function(f) { return f.name; });
+      state.folders.filter(function(f) { return f.parent_id === chFolder.id && f.is_managed; }).forEach(function(fmtFolder) {
+        if (enabledFormats.indexOf(fmtFolder.name) === -1) toDelete.push(fmtFolder.id);
+      });
+    }
+  });
+});
+
+if (!toDelete.length) return;
+
+var totalAssets = 0;
+for (var i = 0; i < toDelete.length; i++) {
+  var data = await api('/api/folders/' + toDelete[i] + '/count');
+  totalAssets += data.count || 0;
+}
+
+var msg = totalAssets > 0
+  ? toDelete.length + ' folder' + (toDelete.length !== 1 ? 's' : '') + ' removed from brief.\n\n' + totalAssets + ' asset' + (totalAssets !== 1 ? 's' : '') + ' and all their files will be permanently deleted. This cannot be undone.'
+  : toDelete.length + ' folder' + (toDelete.length !== 1 ? 's' : '') + ' removed from brief.';
+
+if (!confirm(msg)) return;
+
+for (var j = 0; j < toDelete.length; j++) {
+  await api('/api/folders/' + toDelete[j], {method: 'DELETE'});
+}
+}
 
 function editAssetTags(){
 var asset=state.currentAsset.asset;var version=state.currentAsset.versions.find(function(v){return v.is_latest;})||state.currentAsset.versions[0];

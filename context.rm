@@ -1,6 +1,4 @@
-
-My thought process
-Greenroom— Project Context (Updated)
+Greenroom — Project Context
 
 What It Is
 
@@ -27,22 +25,24 @@ CampaignManager/
 ├── templates/
 │   └── index.html          ← Entire frontend (HTML/CSS/JS)
 └── uploads/
-├── videos/             ← Copies of uploaded video files
-└── pptx/               ← Copies of uploaded PPTX reports
+  ├── videos/             ← Copies of uploaded video files
+  └── pptx/               ← Copies of uploaded PPTX reports
 Backend — All Current Routes (app.py)
 
 Route	Method	Purpose
 /	GET	Serves index.html
 /uploads/videos/<filename>	GET	Serves video files
 /api/folders	GET	List all folders
-/api/folders	POST	Create folder {name, parent_id}
+/api/folders	POST	Create folder {name, parent_id, is_managed, brainsuite_test, cta, file_type}
 /api/folders/<id>	PUT	Rename folder
 /api/folders/<id>	DELETE	Hard-delete folder + all contained assets + files (recursive)
 /api/folders/<id>/count	GET	Count assets recursively in folder
+/api/folders/<id>/config	GET	Get project config JSON
+/api/folders/<id>/config	PUT	Save project config JSON
 /api/assets	GET	List assets — supports ?folder_id=X or ?project_id=X (recursive)
 /api/assets/<id>	DELETE	Hard-delete asset + files
 /api/assets/<id>	PUT	Move asset to folder {folder_id}
-/api/assets/<id>/tags	PUT	Update metadata + auto-create folder path
+/api/assets/<id>/tags	PUT	Update metadata
 /api/versions/<asset_id>	GET	List versions for asset
 /api/upload	POST	Upload video + optional PPTX
 /api/versions/<id>/report	POST	Pair report with existing version
@@ -53,116 +53,166 @@ Database Schema
 sql
 
 
-folders   — id, name, parent_id (CASCADE on delete), created_at
+folders   — id, name, parent_id (CASCADE on delete), created_at,
+          is_managed (0/1), config (JSON), brainsuite_test (TEXT),
+          cta (INTEGER), file_type (TEXT DEFAULT 'video')
 
 assets    — id, folder_id (SET NULL on delete), base_name,
-        display_name, phase, platform, format,
-        is_master (0/1), audience_tags (JSON), created_at
+          display_name, phase, platform, format,
+          is_master (0/1), audience_tags (JSON),
+          content_origin (TEXT DEFAULT 'Brand'), language (TEXT),
+          created_at
 
 versions  — id, asset_id (CASCADE), version_number,
-        video_filename, video_path, pptx_filename, pptx_path,
-        ace_score, kpi_data (JSON), asset_info (JSON),
-        thumbnail (base64), is_latest, uploaded_at
+          video_filename, video_path, pptx_filename, pptx_path,
+          ace_score, kpi_data (JSON), asset_info (JSON),
+          thumbnail (base64), duration (INTEGER), is_latest, uploaded_at
+Project Config JSON
+
+Stored in folders.config for root-level folders only:
+
+json
+
+
+{
+"identity": {
+  "company": "Unilever",
+  "brand": "Dove",
+  "market": "USA",
+  "businessGroup": "Personal Care",
+  "category": "Deodorants",
+  "defaultLanguage": "English",
+  "additionalLanguages": ["Spanish"]
+},
+"org": {
+  "phases": ["Reach", "Action"],
+  "audiences": ["18-34", "Hispanic"]
+},
+"phaseChannels": {
+  "Reach": [
+    {
+      "name": "Meta",
+      "formats": [
+        {"name": "Story", "test": "Instagram Story", "cta": true, "enabled": true},
+        {"name": "Feed", "test": "Instagram Feed", "cta": true, "enabled": true}
+      ],
+      "enabled": true
+    },
+    {"name": "OLV 15", "test": "YouTube In-Stream", "cta": false, "enabled": true},
+    {"name": "TikTok", "test": "TikTok", "cta": true, "enabled": true}
+  ],
+  "Action": [...]
+}
+}
+Hardcoded for all Brainsuite submissions: assetStage: "Iteration", assetOrigin: "Global (BG)"
+
 Frontend — Feature Overview
 
 Navigation Structure
-Home: Project picker cards with score distribution bars
-Project → Overview (project root): Sticky header with project name + score bands + filter bar. Assets grouped by folder path with section dividers. "Untagged" group at bottom.
-Project → Sub-folder: Normal grid view with folder cards + asset cards
-Detail/player view: Video player + ACE scores panel
+
+Home: Project picker cards with score distribution bars. Right-click → Edit Brief / Rename / Delete.
+Project → Overview (project root): Sticky header with project name + score bands + filter bar + ⚙️ Edit Brief button. Assets grouped by folder path with section dividers.
+Project → Sub-folder: Normal grid view with folder cards + asset cards.
+Detail/player view: Video player + ACE scores panel.
 Sidebar (within project)
-Overview link (SVG home icon, top) → returns to project overview
-Separator line
-FOLDERS label
-Folder tree — collapsible with ▶ arrows, top-level folders slightly lighter/more prominent
-Clicking "← All Projects" returns to home
+
+Overview link (SVG home icon) → project overview
+Separator + FOLDERS label
+Folder tree — collapsible, top-level folders prominent
+Managed folders: no ✏️🗑 on hover, right-click → "Edit via Project Settings"
+Unmanaged folders: fully editable as normal
+← All Projects → home
+Project Setup Modal (3 steps)
+
+Step 1 — Identity: Company (Unilever/Competitor pills), Brand, Market, Business Group, Category, Default Language, Additional Languages (pill input)
+Step 2 — Organisation: Phases (common pills + freetext), Audiences (pill input)
+Step 3 — Channels: Per-phase platform/format selection with checkboxes. Pre-populated from DEFAULT_CHANNELS. Inline format sub-options for multi-format platforms.
+On save: config written to DB, managed folder tree auto-generated. On edit: disabled channels removed (with asset-count warning), new channels created, existing unchanged.
+Accessible via: + New Project button, project card right-click → Edit Brief, overview ⚙️ Edit Brief button, managed folder right-click → Edit via Project Settings.
+Managed vs Unmanaged Folders
+
+Managed (is_managed=1): created by project setup, tied to config. No rename/delete in UI. Right-click routes to project settings.
+Unmanaged: user-created via + New Folder. Fully editable. Can be nested inside managed folders for organisation — inherits test config from nearest managed ancestor.
+Test config inheritance: walk up tree until first managed folder with brainsuite_test set. Unmanaged layers are invisible to Brainsuite.
 Overview Page
-Sticky header: Project name (large headline) + score bands (right-aligned, max 500px, fully rounded endcaps, counts inside coloured segments) + filter bar (All / Not Green / Green / Amber / Red / Unscored with coloured pip indicators)
-Filter hides empty sections entirely
-Folder path headers (e.g. REACH — META — 4X5) above each group
-Untagged group catches assets without phase/platform
+
+Sticky header: project name + score bands (fully rounded, handles single-segment correctly) + filter bar
+Filters: All / Not Green / Green / Amber / Red / Unscored
+Assets grouped by folder path (e.g. REACH — META — STORY), Untagged group at bottom
+⚙️ Edit Brief button in header
 Asset Cards
-Thumbnail (from PPTX or auto-generated from video frame)
-Hover to scrub video preview (mouse position = timeline position)
-ACE score badge (green/amber/red/none)
-MASTER badge if flagged
-Right-click context menu: Add Report (if unscored) / Move to folder / Delete
+
+Thumbnail (from PPTX or auto-generated from video frame at 20% mark)
+Duration displayed on card
+Hover to scrub video preview
+ACE score badge, MASTER badge
+Right-click: Add Report (if unscored) / Move to folder / Delete
 Drag onto folder cards to move
-Tagging Modal (post-upload, new assets only)
+Tagging Modal
+
+Triggered on first upload of any asset. Skipped for version uploads.
 Video autoplays silently in left panel
-Phase pills (Reach/Action) — required
-Platform pills (Meta/Snapchat/TikTok/OLV/YouTube/Pinterest) — required
-Format pills (4x5/9x16/16x9/1x1/2x3) — optional
-Display name (pre-filled from filename, freetyped)
-Master toggle
-Audience tags (freetext with autocomplete from existing tags, Enter to add)
-Confirm locked until phase + platform selected
-Context autofills from current folder if navigated before upload
-Auto-creates folder path on confirm, moves asset there
-Version uploads skip the modal entirely
+In managed folder: Phase/platform/format pills hidden. Blue banner shows "📍 Will test as: Instagram Story". Only asks for display name, content origin (Brand/Creator), language (if project has additional languages), master toggle, audience.
+Outside managed folder: Full manual tagging — phase/platform pills from project config, formats filtered by selected platform, hidden for single-format platforms.
+Audience: single-select pills from project-defined audiences list.
+Confirm locked until phase + platform resolved (either from context or manual selection).
+On confirm: asset metadata saved, auto-moved to correct managed folder via findTargetFolder().
+Edit button in detail view re-opens pre-filled modal.
 Detail/Player View
-Back button → returns to grid/overview
-Display name in header (filename shown secondary in grey if renamed)
+
+Back → grid/overview
+Display name prominent, filename secondary in grey if renamed
 Version dropdown
-Meta bar: phase / platform / format / ★ Master / audience tags / report date + ✏️ Edit button
-Edit button opens tagging modal pre-filled with existing data
-Video player (full width)
-Right panel: ACE score + category breakdown (collapsible KPI detail)
+Meta bar: all tags + date + ✏️ Edit
+Video player + ACE score panel with collapsible category KPIs
 Add/Replace Report button
-Report Pairing
-PPTX parsed entirely in browser (JSZip, BrainSurgeon logic)
-Pairing check: normalises both filenames (/[^a-z0-9]/g stripped), checks if video token in PPTX OR PPTX core (boilerplate stripped) in video token. Warning on mismatch, not a hard block.
+Score Bands
+
+Green ≥67, Amber 34–66, Red <34
+Weighted: Branding ×5, Attention ×3, Processing/Emotional/Persuasion ×1
 Key Design Decisions
 
-Projects = Top-level folders
-No separate projects table. "Project" = root-level folder (parent_id = NULL). Home shows these as project cards.
+Projects = top-level folders (no separate projects table)
+Project config stored as JSON in folders.config on root folder
+Folder structure IS the brief — auto-generated from channel config
+Tagging drives location — asset auto-moves to correct folder on tag confirm
+Versions: same filename = new version, different filename = new asset
+Display name separate from base_name (filename)
+All uploads are file copies in uploads/. Safe to hard-delete.
+content_origin defaults to Brand; surfaces at per-asset level only
+Language hidden in tagging modal unless project has additional languages defined
+API Readiness getBrainsuiteTestConfig(assetId) — walks folder tree to find test config, assembles complete Brainsuite submission payload including all project-level identity fields. Returns null for non-testable assets (Pinterest, Display, unmanaged folders). Ready to wire to API when available.
 
-Overview vs Folder navigation
-Overview (project root) fetches all assets in the project recursively via ?project_id=X. Folder view fetches by ?folder_id=X. Switching between them is seamless.
-
-Versions
-Same filename = new version of same asset. Different filename = new asset. is_latest = 1 on most recent.
-
-Tagging drives folder structure
-Phase + Platform + Format from the tag modal auto-creates the folder hierarchy. The folder tree IS the tag structure.
-
-Display name
-display_name is separate from base_name (filename). Cards show display_name || base_name. Player header shows display name prominently, base_name secondary in grey.
-
-ACE Score
-Weighted average of 5 categories: Branding (×5), Attention (×3), Processing/Emotional/Persuasion (×1 each). Green ≥67, Amber 34–66, Red <34.
-
-File storage
-All uploads are copies in uploads/. Originals never touched. Safe to hard-delete.
-
-Code Delivery (Important for future sessions)
+Code Delivery (Important for Future Sessions)
 
 HTML files → send as standalone code block → renders as artifact → use code view tab → copy → paste into templates/index.html
-Python files → use repair.py. Write using S = chr(32)*4, S2 = chr(32)*8, N = chr(10) to encode indentation. Run with python3 repair.py.
+Python files → use repair.py with S = chr(32)*4, S2 = chr(32)*8, N = chr(10)
 VS Code is the editor. Python 3.14.3. Managed corporate Mac — python3 only, no shell scripts.
-DB migrations use list comprehension: [conn.execute("ALTER TABLE assets ADD COLUMN "+c+" "+d) for c,d in new_cols if c not in existing]
+DB migrations use list comprehension: [conn.execute("ALTER TABLE...") for c,d in new_cols if c not in existing]
+Targeted JS patches preferred over full HTML regeneration where possible (token efficiency)
 Related Tools
 
-AutoBS (Chrome extension)
-Automates Brainsuite upload form. Captures ACE scores, category scores, KPI data from the live Brainsuite results page.
+AutoBS (Chrome extension) Automates Brainsuite upload form. Captures ACE scores, category scores, KPI data from live results page. Defines the exact field values and valid options Brainsuite accepts — authoritative reference for any future constrained field implementation in project setup.
 
-BrainSurgeon (web app)
-Parses Brainsuite PPTX reports. The parsePPTX() function and all supporting logic is embedded directly in index.html.
+BrainSurgeon (web app) Parses Brainsuite PPTX reports. The parsePPTX() function and all supporting logic embedded directly in index.html.
 
 Deferred / Backlog
 
 Item	Notes
+futureTests array in DEFAULT_CHANNELS	Dormant scaffolding for multi-test platforms (e.g. Meta Story → Instagram Story + Facebook Story). Defer to API session — shape may change once real API is known.
+Brainsuite field validation	Business Group, Category, Market, Brand, Language should use constrained dropdowns matching Brainsuite's accepted values. Source of truth: AutoBS field definitions. Defer to API session.
+Brainsuite API integration	Auto-submit test on upload to managed folder. Use getBrainsuiteTestConfig() as payload builder. Poll for results, auto-pair when ready (~10 mins).
 Auto-launcher	Wrap python3 launch.py in Automator app, add to Login Items
-Sidebar drag-to-folder	Drag asset cards onto sidebar folders (currently grid folder cards only)
+Sidebar drag-to-folder	Drag asset cards onto sidebar folders (grid folder cards only currently)
 Folder drag	Pick up entire folders for mass moves
 Cloud/remote deployment	Private server, always-on, multi-user, bypasses SharePoint blocker
 Sort	By name, date, ACE score
 Download	Single asset + project-level zip preserving folder structure
-Simple comments	Text notes on versions, upgrades to timestamped playhead comments when cloud arrives
-Version ACE delta	↑/↓ indicator on score badge vs previous version
-Version stacking — fuzzy match	Handle _v2 suffix etc. not creating a new asset
-Audience as single-select	Currently multi-tag; should be one audience per asset, project-defined options
-Project-level config screen	Define available audiences, lookup values per project
+Simple comments	Text notes on versions; upgrades to timestamped playhead comments when cloud arrives
+Version ACE delta	↑/↓ indicator vs previous version
+Version stacking — fuzzy match	Handle _v2 suffix not creating a new asset
 Cohorts	Concept not yet defined — revisit
-Stage 2 filter extensions	Filter by platform, phase, format, master status once tagging data is populated
+Stage 2 filter extensions	Filter by platform, phase, format, master status
 List view toggle	Alternative to card grid for dense folders
+Display asset support	HTML5 upload + framed playback (Path 1, separate project) or video proxy (Path 2, low effort if render pipeline exists)
+Static/image asset support	JPG/PNG for Meta/Pinterest statics alongside video
