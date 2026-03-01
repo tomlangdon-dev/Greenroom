@@ -1,6 +1,8 @@
 <html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="/static/greenroomfavi.png">
+<link rel="apple-touch-icon" href="/static/GreenroomIcon.png">
 <title>Greenroom</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -354,6 +356,11 @@ font-family: 'Figtree', sans-serif;
 .cdur-overlay{position:absolute;bottom:8px;right:8px;background:transparent;color:white;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:400;z-index:2;pointer-events:none;text-shadow:0 1px 4px rgba(0,0,0,.6),0 0 8px rgba(0,0,0,.4)}
 .ace{z-index:2}
 .master-vtag{background:rgba(99,102,241,.15);color:#6366f1;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:0.3px}
+#marker-tooltip{position:absolute;bottom:calc(100% + 10px);background:rgba(15,23,42,.92);color:white;padding:6px 10px;border-radius:6px;font-size:11px;pointer-events:none;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,.3);max-width:200px;transform:translateX(-50%);line-height:1.4;display:none}
+#marker-tooltip::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:rgba(15,23,42,.92)}
+.mt-time{font-size:10px;opacity:.6;margin-bottom:3px;font-weight:600}
+.vcol:-webkit-full-screen{background:#000}
+.vcol:fullscreen{background:#000}
 </style>
 </head>
 <body>
@@ -428,6 +435,12 @@ font-family: 'Figtree', sans-serif;
       <div id="marker-container"></div>
     </div>
     <span class="player-time" id="player-time">0:00 / 0:00</span>
+<button class="player-btn" id="mute-btn" onclick="toggleMute()">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+</button>
+<button class="player-btn" id="fs-btn" onclick="toggleFullscreen()">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+</button>
     <a id="player-dl-btn" class="player-dl-btn" title="Download video" download>
       <svg width="13" height="13" viewBox="0 0 12 13" fill="currentColor"><path d="M5 0h2v7h2.5L6 10.5 2.5 7H5zm-5 11h12v2H0z"/></svg>
     </a>
@@ -2205,15 +2218,33 @@ var playerScrubbing = false;
 var scrubClickX = null;
 var playIcon = '<svg width="12" height="14" viewBox="0 0 10 12" fill="currentColor"><polygon points="0,0 10,6 0,12"/></svg>';
 var pauseIcon = '<svg width="12" height="14" viewBox="0 0 10 12" fill="currentColor"><rect x="0" y="0" width="3.5" height="12"/><rect x="6.5" y="0" width="3.5" height="12"/></svg>';
+var muteIcon='<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>';
+var muteOffIcon='<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>';
+var fsIcon='<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>';
+var fsExitIcon='<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>';
 
-function initPlayer() {
-var v = document.getElementById('video-player');
-if (!v) return;
-v.addEventListener('timeupdate', updatePlaybar);
-v.addEventListener('play', function(){ updatePlayBtn(true); });
-v.addEventListener('pause', function(){ updatePlayBtn(false); });
-v.addEventListener('ended', function(){ updatePlayBtn(false); });
-v.addEventListener('loadedmetadata', function(){ updatePlaybar(); renderMarkers(); });
+function initPlayer(){
+var v=document.getElementById('video-player');
+if(!v)return;
+v.addEventListener('timeupdate',updatePlaybar);
+v.addEventListener('play',function(){updatePlayBtn(true);});
+v.addEventListener('pause',function(){updatePlayBtn(false);});
+v.addEventListener('ended',function(){updatePlayBtn(false);});
+v.addEventListener('loadedmetadata',function(){updatePlaybar();renderMarkers();});
+v.addEventListener('volumechange',function(){
+  var btn=document.getElementById('mute-btn');
+  if(btn)btn.innerHTML=v.muted?muteOffIcon:muteIcon;
+});
+document.addEventListener('fullscreenchange',function(){
+  var btn=document.getElementById('fs-btn');
+  if(btn)btn.innerHTML=document.fullscreenElement?fsExitIcon:fsIcon;
+});
+document.addEventListener('webkitfullscreenchange',function(){
+  var btn=document.getElementById('fs-btn');
+  if(btn)btn.innerHTML=document.webkitFullscreenElement?fsExitIcon:fsIcon;
+});
+var wrap=document.getElementById('scrub-wrap');
+if(wrap){var tip=document.createElement('div');tip.id='marker-tooltip';wrap.appendChild(tip);}
 }
 
 function togglePlay() {
@@ -2277,16 +2308,51 @@ v.currentTime = pct * v.duration;
 updatePlaybar();
 }
 
-function renderMarkers() {
-var container = document.getElementById('marker-container');
-if (!container) return;
-var v = document.getElementById('video-player');
-var dur = v && v.duration && !isNaN(v.duration) ? v.duration : 0;
-if (!dur || !currentComments.length) { container.innerHTML = ''; return; }
-container.innerHTML = currentComments.map(function(c) {
-  var pct = Math.max(0, Math.min(100, c.timecode / dur * 100));
-  return '<div class="player-marker" style="left:'+pct+'%" title="'+escHtml(c.text)+'" onmousedown="event.stopPropagation()" onclick="event.stopPropagation();seekToComment('+c.timecode+')"></div>';
+function toggleMute(){
+var v=document.getElementById('video-player');if(!v)return;
+v.muted=!v.muted;
+var btn=document.getElementById('mute-btn');
+if(btn)btn.innerHTML=v.muted?muteOffIcon:muteIcon;
+}
+
+function toggleFullscreen(){
+var el=document.querySelector('.vcol');if(!el)return;
+if(!document.fullscreenElement&&!document.webkitFullscreenElement){
+  (el.requestFullscreen||el.webkitRequestFullscreen).call(el);
+} else {
+  (document.exitFullscreen||document.webkitExitFullscreen).call(document);
+}
+}
+
+function showMarkerTooltip(el,comment){
+var tip=document.getElementById('marker-tooltip');if(!tip)return;
+tip.innerHTML='<div class="mt-time">'+formatDuration(Math.floor(comment.timecode))+'</div>'+escHtml(comment.text);
+tip.style.left='0px';tip.style.display='block';
+var wrap=document.getElementById('scrub-wrap');if(!wrap)return;
+var mr=el.getBoundingClientRect(),wr=wrap.getBoundingClientRect(),tw=tip.getBoundingClientRect().width;
+var left=mr.left-wr.left+mr.width/2;
+tip.style.left=Math.max(tw/2,Math.min(left,wr.width-tw/2))+'px';
+}
+
+function hideMarkerTooltip(){
+var t=document.getElementById('marker-tooltip');if(t)t.style.display='none';
+}
+
+function renderMarkers(){
+var container=document.getElementById('marker-container');
+if(!container)return;
+var v=document.getElementById('video-player');
+var dur=v&&v.duration&&!isNaN(v.duration)?v.duration:0;
+if(!dur||!currentComments.length){container.innerHTML='';return;}
+container.innerHTML=currentComments.map(function(c){
+  var pct=Math.max(0,Math.min(100,c.timecode/dur*100));
+  return '<div class="player-marker" style="left:'+pct+'%" onmousedown="event.stopPropagation()" onclick="event.stopPropagation();seekToComment('+c.timecode+')"></div>';
 }).join('');
+container.querySelectorAll('.player-marker').forEach(function(el,i){
+  var comment=currentComments[i];
+  el.addEventListener('mouseenter',function(){showMarkerTooltip(el,comment);});
+  el.addEventListener('mouseleave',hideMarkerTooltip);
+});
 }
 
 function statusLabel(s) {
