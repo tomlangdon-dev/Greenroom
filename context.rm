@@ -1,39 +1,46 @@
-Greenroom — Project Context
+
+My thought process
+Greenroom — Master Context (Sessions 1 & 2)
 
 What It Is
-
 A local-first web app (Mac) for managing video assets and Brainsuite AI test results. Built for a creative agency producer. Single-user for now, cloud deployment planned.
 
 Tech Stack
-
 Backend: Python + Flask
 Database: SQLite (via database.py)
-Frontend: Single HTML file — vanilla JS, no frameworks
+Frontend: Vanilla JS, no frameworks — split across static files
 Launcher: python3 launch.py
 URL: http://127.0.0.1:5000 (not localhost — Safari quirk on managed Mac)
 File Structure
 
 
-
 CampaignManager/
 ├── app.py                  ← Flask server + all API routes
 ├── database.py             ← SQLite schema + connection
-├── database.db             ← Live database
+├── database.db             ← Live database (gitignored)
 ├── launch.py               ← App launcher
 ├── repair.py               ← Reusable Python file rebuilder
 ├── requirements.txt        ← flask only
 ├── templates/
-│   └── index.html          ← Entire frontend (HTML/CSS/JS)
+│   └── index.html          ← HTML shell only (no inline CSS or JS)
 ├── static/
-│   └── bg.mp4              ← Home page hero background video
-└── uploads/
-  ├── videos/             ← Copies of uploaded video files
-  └── pptx/               ← Copies of uploaded PPTX reports
-Backend — All Current Routes (app.py)
+│   ├── css/
+│   │   └── main.css        ← All styles
+│   ├── js/
+│   │   └── app.js          ← All JavaScript
+│   ├── bg.mp4              ← Hero background video
+│   ├── greenroomfavi.png   ← Favicon 64×64
+│   └── greenroomfavi1024.png ← Apple touch icon 1024×1024
+└── uploads/                ← Legacy path (kept for compatibility)
+  ├── videos/
+  └── pptx/
+Media storage: ~/Documents/GreenroomMedia/projects/{id}_{name}/videos|pptx/ — organised by project at upload time.
 
+Backend — All Routes
 Route	Method	Purpose
 /	GET	Serves index.html
-/uploads/videos/<filename>	GET	Serves video files
+/api/media/<version_id>	GET	Serves video by version ID via absolute path
+/uploads/videos/<filename>	GET	Legacy video serving (kept for compatibility)
 /api/folders	GET	List all folders
 /api/folders	POST	Create folder {name, parent_id, is_managed, brainsuite_test, cta, file_type}
 /api/folders/<id>	PUT	Rename folder
@@ -45,13 +52,16 @@ Route	Method	Purpose
 /api/assets/<id>	DELETE	Hard-delete asset + files
 /api/assets/<id>	PUT	Move asset to folder {folder_id}
 /api/assets/<id>/tags	PUT	Update metadata
+/api/assets/<id>/status	PUT	Set review status {status}
 /api/versions/<asset_id>	GET	List versions for asset
-/api/upload	POST	Upload video + optional PPTX
 /api/versions/<id>/report	POST	Pair report with existing version
+/api/versions/<vid>/comments	GET	List comments for version
+/api/versions/<vid>/comments	POST	Add comment {text, timecode}
+/api/comments/<cid>	DELETE	Delete comment
+/api/upload	POST	Upload video + optional PPTX
 /api/tags	GET	Get all distinct audience tags ?project_id=X
 /api/projects/stats	GET	Asset counts + score distribution per project
 Database Schema
-
 sql
 
 
@@ -63,14 +73,22 @@ assets    — id, folder_id (SET NULL on delete), base_name,
           display_name, phase, platform, format,
           is_master (0/1), audience_tags (JSON),
           content_origin (TEXT DEFAULT 'Brand'), language (TEXT),
+          review_status (TEXT DEFAULT 'unreviewed'),
           created_at
 
 versions  — id, asset_id (CASCADE), version_number,
           video_filename, video_path, pptx_filename, pptx_path,
           ace_score, kpi_data (JSON), asset_info (JSON),
-          thumbnail (base64), duration (INTEGER), is_latest, uploaded_at
-Project Config JSON
+          thumbnail (base64), duration (INTEGER), is_latest,
+          uploaded_at
 
+comments  — id, version_id (CASCADE), timecode (REAL),
+          text (TEXT), created_at
+Assets query returns additionally (via JOIN): ace_score, asset_info, thumbnail, uploaded_at, latest_version, latest_version_id, video_filename, duration, review_status, content_origin, language, comment_count (subquery counting comments on latest version only).
+
+Review status values: unreviewed | needs_attention | reviewed | approved
+
+Project Config JSON
 Stored in folders.config for root-level folders only:
 
 json
@@ -102,145 +120,192 @@ json
     },
     {"name": "OLV 15", "test": "YouTube In-Stream", "cta": false, "enabled": true},
     {"name": "TikTok", "test": "TikTok", "cta": true, "enabled": true}
-  ],
-  "Action": [...]
+  ]
 }
 }
 Hardcoded for all Brainsuite submissions: assetStage: "Iteration", assetOrigin: "Global (BG)"
 
 Frontend — Feature Overview
-
-Home / Landing Page
-
-Full-bleed hero (50vh) with video background (/static/bg.mp4), dark overlay, large centered Greenroom logo + wordmark
-As user scrolls, content slides over the sticky hero
-At 40% scroll threshold a compact header drops in from the top (logo + no buttons)
-Below the hero: Projects title row with + New Project button, then project cards grid
-Main app header (.hdr) is hidden on home view, restored on project entry
-Project cards show score distribution bar + counts. Right-click → Edit Brief / Rename / Delete.
 Navigation Structure
 
-Home → project overview → folder → detail view
-No browser history API wiring yet (backlog)
+Home: Project picker cards with score distribution bars. Hero video background with compact header on scroll. Right-click → Edit Brief / Rename / Delete.
+Project → Overview: Sticky header with project name + score bands + filter dropdowns + ⚙️ Edit Brief button. Assets grouped by folder path with section dividers.
+Project → Sub-folder: Normal grid view with folder cards + asset cards.
+Detail/player view: Custom video player + right panel (Scores | Comments tabs).
 Sidebar (within project)
 
 Overview link (SVG home icon) → project overview
 Separator + FOLDERS label
-Folder tree — collapsible, top-level folders prominent
+Folder tree — collapsible, condensed vertical spacing
+Drag-to-resize handle on right edge (160px–420px range)
 Managed folders: no ✏️🗑 on hover, right-click → "Edit via Project Settings"
 Unmanaged folders: fully editable
 ← All Projects → home
 Project Setup Modal (3 steps)
 
-Step 1 — Identity: Company (Unilever/Competitor pills), Brand, Market, Business Group, Category, Default Language, Additional Languages
-Step 2 — Organisation: Phases (common pills + freetext), Audiences (pill input)
-Step 3 — Channels: per-phase platform/format selection, pre-populated from DEFAULT_CHANNELS, inline format sub-options
-On save (new): config written to DB, managed folder tree auto-generated
-On save (edit): disabled channels removed (with asset-count warning), new channels created, existing unchanged, sidebar + grid refreshed via loadAssets()
-Accessible via: + New Project, project card right-click → Edit Brief, overview ⚙️ Edit Brief button, managed folder right-click → Edit via Project Settings
-Managed vs Unmanaged Folders
-
-Managed (is_managed=1): created by project setup, no rename/delete in UI
-Unmanaged: user-created via + Add Folder button in header (non-overview views only)
-Add Folder triggers inline input card injected into the folders section of the grid
-Enter saves, Escape cancels, input appears contextually where folders live
-Test config inheritance: walk up tree to first managed folder with brainsuite_test set
+Step 1 — Identity: Company, Brand, Market, Business Group, Category, Default Language, Additional Languages
+Step 2 — Organisation: Phases, Audiences
+Step 3 — Channels: Per-phase platform/format selection with checkboxes
+On save: config written to DB, managed folder tree auto-generated
+On edit: disabled channels removed (with asset-count warning), new channels created
 Overview Page
 
-Sticky header: project name + score bands + filter bar (hidden when project empty)
-Score bands: fully rounded, handles single-segment correctly (:only-child fix)
-Filters: All / Not Green / Green / Amber / Red / Unscored
+Sticky header: project name + score bands + two filter dropdowns + Has Comments toggle
+Score dropdown: All / Not Green / Green / Amber / Red / Unscored
+Status dropdown: All / Approved / Reviewed / Needs Attention / Unreviewed
+💬 Has Comments toggle pill
+Filters are additive — both applied simultaneously
 Assets grouped by folder path, Untagged group at bottom
-Masters sort to front of each group
-⚙️ Edit Brief button in header
-Empty project: light empty state message, no filter bar shown
-Folder Grid View
-
-Folders always on top in .folders-section, assets always below in .assets-section — never share rows
-Masters sort to front of asset section
-Empty folder: light empty state message
-Upload file name truncates with ellipsis in upload modal
 Asset Cards
 
-Thumbnail (from PPTX or auto-generated from video at 20% mark)
-Duration displayed
-Hover to scrub video preview
-ACE score badge, MASTER badge
-Right-click: Add Report (if unscored) / Move to folder / Delete
+Thumbnail with video scrub preview on hover
+ACE score badge (number only, no "ACE" prefix) — top right, z-index above scrub preview
+Duration overlay — bottom right, transparent white thin type with text-shadow, z-index above scrub preview
+No score badge shown for unscored assets
+Version number + ★ Master pill in meta row
+Comment count 💬 n in meta row when > 0 (latest version only)
+Audience tags with border-top divider
+Review status badge (non-unreviewed only) with border-top divider, follows audience tag pattern
+Right-click: Add Report / Move to folder / Delete
 Drag onto folder cards to move
+Detail / Player View
+
+Header: Back, display name, filename (if renamed), version dropdown, Add/Replace Report button
+
+Meta bar: Review status dropdown (leftmost, with vertical separator) → phase, platform, format, master, audience tags, date → ✏️ Edit
+
+Custom video player:
+
+Play/pause button (SVG icons), click video to toggle
+Scrub bar with progress fill, scrub head on hover, amber comment markers
+Click (non-drag) on scrub bar → seeks + switches to Comments tab + focuses input
+Timecode display (current / total)
+Mute button with live icon state
+Fullscreen button (requestFullscreen on .vcol)
+Download button (<a download> wired to /api/media/{version.id})
+Right panel — tabbed (Scores | Comments n):
+
+Scores tab:
+
+SVG ring — coloured arc (green/amber/red), score number inside
+Copy button: image to clipboard (Chrome/secure context), text fallback (execCommand), download fallback. Image: 80×80 @ 2× retina, transparent background
+Category KPIs: one accordion open at a time, Attention open by default
+Comments tab:
+
+Comment list: timecode badge + text + date + delete button
+Click comment → seek + play to timecode
+Amber pip markers on scrub bar; hover pip → tooltip with timecode + text
+Comment input: Enter to send (Shift+Enter for newline)
+Copy all → timecode — text per line
+Review Status
+
+Values: Unreviewed / Needs Attention / Reviewed / Approved
+Detail view: dropdown in meta bar, leftmost, click to reveal list
+Cards: badge for non-unreviewed only, .card-tags styling
+Overview: Status filter dropdown
 Tagging Modal
 
 Triggered on first upload. Skipped for version uploads.
-In managed folder: phase/platform/format hidden, blue banner shows test config
-Outside managed folder: full manual tagging from project config
+In managed folder: phase/platform/format hidden, blue "Will test as" banner, asks name/origin/language/master/audience
+Outside managed folder: full manual tagging
 Audience: single-select pills from project config
-Content origin (Brand/Creator), language (if project has additional languages)
-On confirm: metadata saved, asset auto-moved to correct managed folder
-Edit button in detail view re-opens pre-filled
-Detail / Player View
+On confirm: metadata saved, auto-moved to correct managed folder
+Score Bands Green ≥67, Amber 34–66, Red <34 Weighted: Branding ×5, Attention ×3, Processing/Emotional/Persuasion ×1
 
-Native browser video controls (replacement planned — see backlog)
-Version dropdown, meta bar, ACE score panel with collapsible KPI categories
-Add/Replace Report button
-Score System
+State
+javascript
 
-Green ≥67, Amber 34–66, Red <34
-Weighted: Branding ×5, Attention ×3, Processing/Emotional/Persuasion ×1
+
+state = {
+folderId, projectId, folders[], assets[], currentAsset,
+draggingAssetId,
+scoreFilter,    // 'all'|'notgreen'|'green'|'amber'|'red'|'unscored'
+statusFilter,   // 'all'|'approved'|'reviewed'|'needs_attention'|'unreviewed'
+commentsOnly    // boolean
+}
+
+currentVersionId   // version ID for active comments
+currentComments[]  // comments for current version
+playerScrubbing    // scrub drag state
+scrubClickX        // click vs drag detection
+sidebarResizing, sidebarStartX, sidebarStartW
+Key Functions
+Function	Purpose
+initPlayer()	Wires video element events once at startup
+togglePlay() / updatePlayBtn() / updatePlaybar()	Player state
+toggleMute() / toggleFullscreen()	Mute + fullscreen
+scrubStart/MoveDoc/EndDoc/Seek()	Scrub bar drag
+renderMarkers()	Renders amber timeline markers on scrub bar
+showMarkerTooltip(el, comment) / hideMarkerTooltip()	Pip tooltips
+initSidebarResize()	Sidebar drag-to-resize
+loadComments(versionId)	Fetches + renders comments
+renderComments()	Renders list + calls renderMarkers
+sendComment() / deleteComment(id)	Comment CRUD
+copyComments()	Copy all as formatted text
+seekToComment(timecode)	Seek + play
+switchScoreTab(tab)	Toggle Scores/Comments panel
+copyAceScore(ace, color, label) + dlBlob()	ACE clipboard/download
+setReviewStatus(assetId, status)	API + local state + UI update
+toggleStatusDropdown(e) / updateStatusBtn(status)	Status dropdown in meta bar
+toggleOvDropdown(id, e) / setScoreFilter(v) / setStatusFilter(v) / toggleCommentsFilter()	Overview filter dropdowns
+statusLabel(s)	Status value → display string
+escHtml(str)	XSS-safe string for comment rendering
+renderBreadcrumb()	Header breadcrumb + action buttons
+renderSidebar()	Folder tree
+renderOverview() / renderGrid()	Main content area
+makeCard(a) / makeFolderCard(f)	Card HTML builders
+showTagModal() / renderTagModal() / submitTags()	Tagging flow
+getBrainsuiteTestConfig(assetId)	Assembles Brainsuite submission payload
+findTargetFolder(projectId, phase, platform, format)	Finds managed folder for auto-move
+generateManagedFolders() / cleanupRemovedManagedFolders()	Project setup folder management
+parsePPTX(file) / calcACE(cats)	PPTX parsing + score calculation
 Key Design Decisions
-
 Projects = top-level folders (no separate projects table)
 Project config stored as JSON in folders.config on root folder
 Folder structure IS the brief — auto-generated from channel config
-Tagging drives location — asset auto-moves to correct managed folder on confirm
+Tagging drives location — asset auto-moves to correct folder on tag confirm
 Versions: same filename = new version, different filename = new asset
 Display name separate from base_name (filename)
-All uploads are file copies in uploads/. Safe to hard-delete.
+All uploads are file copies in ~/Documents/GreenroomMedia/. Safe to hard-delete.
+comment_count on assets query counts only latest version's comments (is_latest = 1)
+Video served via /api/media/{version_id} (absolute path lookup) throughout
 content_origin defaults to Brand; surfaces at per-asset level only
-Language hidden in tagging modal unless project has additional languages
-API Readiness getBrainsuiteTestConfig(assetId) — walks folder tree, assembles complete Brainsuite submission payload. Returns null for non-testable assets. Ready to wire when API available.
+Language hidden in tagging modal unless project has additional languages defined
+API Readiness
+getBrainsuiteTestConfig(assetId) — walks folder tree to find test config, assembles complete Brainsuite submission payload. Returns null for non-testable assets. Ready to wire to API.
 
 Code Delivery (Important for Future Sessions)
-
-HTML files → send as standalone code block → renders as artifact → use code view tab → copy → paste into templates/index.html
+main.css → send as standalone code block → copy → paste into static/css/main.css
+app.js → send as standalone code block → copy → paste into static/js/app.js
+index.html → HTML shell only, rarely needs changes
 Python files → use repair.py with S = chr(32)*4, S2 = chr(32)*8, N = chr(10)
-VS Code is the editor. Python 3.14.3. Managed corporate Mac — python3 only, no shell scripts
+VS Code is the editor. Python 3.14.3. Managed corporate Mac — python3 only
 DB migrations use list comprehension: [conn.execute("ALTER TABLE...") for c,d in new_cols if c not in existing]
-Targeted JS patches preferred over full HTML regeneration where possible (token efficiency)
-JS Code Landmarks for Patch Placement
-
-"utility/helper functions" → block containing formatDuration(), checkPair(), generateVideoThumbnail(), calcACE(), sortedByMaster() — above init()
-"state variables" → var state = {...} block at top of script
-"context menu functions" → showCtx() / hideCtx() / showProjCtx() block
-"sidebar rendering" → renderSidebar(), makeRow(), addFolder()
-"overview/grid rendering" → renderOverview(), renderGrid(), makeCard(), makeFolderCard()
-"tag modal functions" → showTagModal(), renderTagModal(), submitTags()
-"project setup functions" → // === PROJECT SETUP MODAL === block
+Targeted JS/CSS patches preferred over full file regeneration where possible (token efficiency)
+Full file overwrites now viable for main.css and app.js individually given the split
 Related Tools
+AutoBS (Chrome extension) — Automates Brainsuite upload form. Captures ACE scores, category scores, KPI data. Authoritative reference for constrained field values.
 
-AutoBS (Chrome extension) Automates Brainsuite upload form. Captures ACE scores, category scores, KPI data from live results page. Defines exact field values and valid options Brainsuite accepts — authoritative reference for future constrained field implementation in project setup.
-
-BrainSurgeon (web app) Parses Brainsuite PPTX reports. parsePPTX() and all supporting logic embedded directly in index.html.
+BrainSurgeon (web app) — Parses Brainsuite PPTX reports. parsePPTX() and all supporting logic embedded in app.js.
 
 Deferred / Backlog
-
 Item	Notes
-Video player controls + inline comments	Native browser controls are visually heavy. Build a custom lightweight playbar — natural anchor for timecode-based comments. Comment markers on scrub bar, click to jump and read/add. Replaces native controls entirely. Multi-user commenting unlocks with cloud deployment; single-user timestamped notes useful before that.
-futureTests array in DEFAULT_CHANNELS	Dormant scaffolding for multi-test platforms (e.g. Meta Story → Instagram Story + Facebook Story). Defer to API session — shape may change once real API is known.
-Brainsuite field validation	Business Group, Category, Market, Brand, Language should use constrained dropdowns matching Brainsuite's accepted values. Source of truth: AutoBS field definitions. Defer to API session.
-Brainsuite API integration	Auto-submit test on upload to managed folder. Use getBrainsuiteTestConfig() as payload builder. Poll for results, auto-pair when ready (~10 mins).
-Browser back button	No history.pushState() calls — browser has no navigation history. Fix: call pushState at each navigation point (home, project, folder, detail), listen for popstate to reverse. Moderate effort.
-Batch upload	Multiple files selected at once. Display creative typically arrives in sets (MPU, Leader, Sky) — good primary use case. Solution TBD.
+Brainsuite API integration	Auto-submit on upload, poll for results, auto-pair. Use getBrainsuiteTestConfig() as payload builder
+Brainsuite field validation	Business Group, Category, Market, Brand, Language as constrained dropdowns. Source: AutoBS field definitions
+futureTests array in DEFAULT_CHANNELS	Dormant scaffolding for multi-test platforms. Defer to API session
+Cloud/remote deployment	Private server, always-on, multi-user. Tailscale currently used as interim solution
 Auto-launcher	Wrap python3 launch.py in Automator app, add to Login Items
-Sidebar drag-to-folder	Drag asset cards onto sidebar folders (grid folder cards only currently)
-Folder drag	Pick up entire folders for mass moves
-Cloud/remote deployment	Private server, always-on, multi-user, bypasses SharePoint blocker
-Sort controls	By name, date, ACE score
+Browser back button	No history.pushState() calls. Fix: push state at each navigation point, listen for popstate
+Sort	By name, date, ACE score
 Download	Single asset + project-level zip preserving folder structure
 Version ACE delta	↑/↓ indicator vs previous version
 Version stacking — fuzzy match	Handle _v2 suffix not creating a new asset
+Sidebar drag-to-folder	Drag asset cards onto sidebar folders
+Folder drag	Pick up entire folders for mass moves
+List view toggle	Alternative to card grid
 Stage 2 filter extensions	Filter by platform, phase, format, master status
-List view toggle	Alternative to card grid for dense folders
-Display asset support	HTML5 upload + framed playback (Path 1) or video proxy (Path 2) — deferred
-Static/image asset support	JPG/PNG for Meta/Pinterest statics alongside video
-Cohorts	Concept undefined — needs a conversation before building
-Comments (simple)	Text notes on versions; upgrades to timestamped playhead comments when custom player built
+Display asset support	HTML5 upload + framed playback or video proxy
+Static/image asset support	JPG/PNG for Meta/Pinterest statics
+Cohorts	Concept not yet defined
+Display asset grouping	Sets of three sizes (MPU, Leader, Sky) — solution TBD
+SVG logo rendering	Slight outline artefact visible on hero at large size in Safari/Chrome — cosmetic, low priority

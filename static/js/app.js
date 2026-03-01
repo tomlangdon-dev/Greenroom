@@ -325,7 +325,21 @@ async function deleteF(id){await safeDeleteFolder(id,async function(){if(state.f
 async function renameF(id){var f=state.folders.find(function(x){return x.id===id;});var name=prompt("Rename:",f?f.name:"");if(!name||name===(f&&f.name))return;await api("/api/folders/"+id,{method:"PUT",body:JSON.stringify({name:name})});await loadFolders();renderSidebar();renderBreadcrumb();}
 async function deleteAssetCard(id){var a=state.assets.find(function(x){return x.id===id;});if(!confirm('Delete "'+(a?a.base_name:"this asset")+'"? Cannot be undone.'))return;await api("/api/assets/"+id,{method:"DELETE"});loadAssets(state.folderId);}
 
-function moveAsset(assetId){moveAssetId=assetId;var asset=state.assets.find(function(a){return a.id===assetId;});var list=document.getElementById("move-list");var html='';function addOpt(folder,depth){var isCur=asset&&asset.folder_id===folder.id;html+='<div class="move-opt'+(isCur?" cur":"")+'" style="padding-left:'+(14+depth*16)+'px" onclick="submitMove('+assetId+','+folder.id+')">📁 '+folder.name+'</div>';state.folders.filter(function(f){return f.parent_id===folder.id;}).forEach(function(c){addOpt(c,depth+1);});}state.folders.filter(function(f){return!f.parent_id;}).forEach(function(f){addOpt(f,0);});list.innerHTML=html;document.getElementById("move-modal").style.display="block";}
+function moveAsset(assetId){
+moveAssetId=assetId;
+var asset=state.assets.find(function(a){return a.id===assetId;});
+var list=document.getElementById("move-list");
+var html='';
+function addOpt(folder,depth){
+  var isCur=asset&&asset.folder_id===folder.id;
+  if(depth>=2){html+='<div class="move-opt'+(isCur?" cur":"")+'" style="padding-left:'+(14+(depth-2)*16)+'px" onclick="submitMove('+assetId+','+folder.id+')">📁 '+folder.name+'</div>';}
+  state.folders.filter(function(f){return f.parent_id===folder.id;}).forEach(function(c){addOpt(c,depth+1);});
+}
+var projectRoot=state.folders.find(function(f){return f.id===state.projectId;});
+if(projectRoot)addOpt(projectRoot,0);
+list.innerHTML=html;
+document.getElementById("move-modal").style.display="block";
+}
 function closeMoveModal(){document.getElementById("move-modal").style.display="none";moveAssetId=null;}
 async function submitMove(assetId,folderId){await fetch("/api/assets/"+assetId,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({folder_id:folderId})});closeMoveModal();loadAssets(state.folderId);}
 
