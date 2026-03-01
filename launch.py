@@ -15,4 +15,4 @@ from database import init_db
 init_db()
 print("\n🎬  Video Asset Manager → http://localhost:5000")
 print("Press Ctrl+C to stop.\n")
-app.run(debug=False, port=5000, use_reloader=False)
+app.run(debug=False, host='0.0.0.0', port=5000, use_reloader=False)

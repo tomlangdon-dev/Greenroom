@@ -1,0 +1,11 @@
+# Data — never commit these
+uploads/
+database.db
+*.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env
+venv/
