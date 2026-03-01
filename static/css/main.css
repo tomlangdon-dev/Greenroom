@@ -352,3 +352,5 @@ font-family: 'Figtree', sans-serif;
 .mt-time{font-size:10px;opacity:.6;margin-bottom:3px;font-weight:600}
 .vcol:-webkit-full-screen{background:#000}
 .vcol:fullscreen{background:#000}
+.card{position:relative}
+.stack-overlay{position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(99,102,241,.82);display:flex;align-items:center;justify-content:center;color:white;font-size:13px;font-weight:700;pointer-events:none;z-index:5;letter-spacing:0.3px}

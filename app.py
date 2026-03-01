@@ -371,6 +371,20 @@ def delete_comment(cid):
     conn.close()
     return jsonify({"ok": True})
 
+@app.route("/api/assets/<int:target_id>/absorb/<int:source_id>", methods=["POST"])
+def absorb_asset(target_id, source_id):
+  conn = get_db()
+  max_v = conn.execute("SELECT MAX(version_number) v FROM versions WHERE asset_id=?", (target_id,)).fetchone()["v"] or 0
+  src_versions = conn.execute("SELECT id FROM versions WHERE asset_id=? ORDER BY version_number", (source_id,)).fetchall()
+  conn.execute("UPDATE versions SET is_latest=0 WHERE asset_id=?", (target_id,))
+  for i, v in enumerate(src_versions):
+      conn.execute("UPDATE versions SET asset_id=?, version_number=?, is_latest=0 WHERE id=?", (target_id, max_v + i + 1, v["id"]))
+  conn.execute("UPDATE versions SET is_latest=1 WHERE asset_id=? AND version_number=(SELECT MAX(version_number) FROM versions WHERE asset_id=?)", (target_id, target_id))
+  conn.execute("DELETE FROM assets WHERE id=?", (source_id,))
+  conn.commit()
+  conn.close()
+  return jsonify({"ok": True})
+
 @app.route("/api/assets/<int:aid>/status", methods=["PUT"])
 def update_status(aid):
     data = request.get_json()
