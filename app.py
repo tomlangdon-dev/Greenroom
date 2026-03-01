@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, send_from_directory
+from flask import Flask, render_template, request, jsonify, send_from_directory, abort
 import os, json, uuid
 from database import get_db
 from werkzeug.utils import secure_filename
@@ -13,6 +13,35 @@ PPTX_DIR = os.path.join(UPLOAD_DIR, "pptx")
 os.makedirs(VIDEO_DIR, exist_ok=True)
 os.makedirs(PPTX_DIR, exist_ok=True)
 
+MEDIA_ROOT = os.path.expanduser("~/Documents/GreenroomMedia")
+os.makedirs(MEDIA_ROOT, exist_ok=True)
+
+def get_project_id(conn, folder_id):
+    if not folder_id: return None
+    fid = int(folder_id)
+    while fid:
+        row = conn.execute("SELECT id, parent_id FROM folders WHERE id=?", (fid,)).fetchone()
+        if not row: break
+        if not row["parent_id"]: return row["id"]
+        fid = row["parent_id"]
+    return int(folder_id)
+
+def get_media_dirs(project_id):
+    if project_id:
+        conn_n = get_db()
+        row = conn_n.execute("SELECT name FROM folders WHERE id=?", (project_id,)).fetchone()
+        conn_n.close()
+        name = row["name"] if row else str(project_id)
+        safe = "".join(c if c.isalnum() or c == '-' else '_' for c in name)
+        base = os.path.join(MEDIA_ROOT, "projects", str(project_id) + '_' + safe)
+    else:
+        base = os.path.join(MEDIA_ROOT, "unsorted")
+    vid = os.path.join(base, "videos")
+    pptx = os.path.join(base, "pptx")
+    os.makedirs(vid, exist_ok=True)
+    os.makedirs(pptx, exist_ok=True)
+    return vid, pptx
+
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -20,6 +49,16 @@ def index():
 @app.route("/uploads/videos/<path:filename>")
 def serve_video(filename):
     return send_from_directory(VIDEO_DIR, filename)
+
+@app.route("/api/media/<int:version_id>")
+def serve_media(version_id):
+    conn = get_db()
+    v = conn.execute("SELECT video_path FROM versions WHERE id=?", (version_id,)).fetchone()
+    conn.close()
+    if not v or not v["video_path"]: abort(404)
+    path = v["video_path"]
+    if not os.path.exists(path): abort(404)
+    return send_from_directory(os.path.dirname(path), os.path.basename(path))
 
 @app.route("/api/folders", methods=["GET"])
 def get_folders():
@@ -121,7 +160,7 @@ def get_assets():
     folder_id = request.args.get("folder_id")
     project_id = request.args.get("project_id")
     conn = get_db()
-    base_q = "SELECT a.id, a.base_name, a.display_name, a.phase, a.platform, a.format, a.is_master, a.audience_tags, a.folder_id, a.created_at, v.ace_score, v.asset_info, v.thumbnail, v.uploaded_at, v.version_number as latest_version, v.id as latest_version_id, v.video_filename, v.duration FROM assets a LEFT JOIN versions v ON v.asset_id = a.id AND v.is_latest = 1"
+    base_q = "SELECT a.id, a.base_name, a.display_name, a.phase, a.platform, a.format, a.is_master, a.audience_tags, a.folder_id, a.review_status, a.content_origin, a.language, a.created_at, v.ace_score, v.asset_info, v.thumbnail, v.uploaded_at, v.version_number as latest_version, v.id as latest_version_id, v.video_filename, v.duration, (SELECT COUNT(*) FROM comments c WHERE c.version_id = v.id) as comment_count FROM assets a LEFT JOIN versions v ON v.asset_id = a.id AND v.is_latest = 1"
     if project_id:
         pf = "WITH RECURSIVE pf AS (SELECT id FROM folders WHERE id = ? UNION ALL SELECT f.id FROM folders f INNER JOIN pf ON f.parent_id = pf.id) "
         rows = conn.execute(pf + base_q + " WHERE a.folder_id IN (SELECT id FROM pf) ORDER BY a.base_name", (project_id,)).fetchall()
@@ -222,13 +261,17 @@ def upload():
     orig = secure_filename(video.filename)
     base_name = os.path.splitext(orig)[0]
     vid_filename = uid + "_" + orig
-    vid_path = os.path.join(VIDEO_DIR, vid_filename)
+    conn_t = get_db()
+    project_id = get_project_id(conn_t, folder_id)
+    conn_t.close()
+    vid_dir, pptx_dir = get_media_dirs(project_id)
+    vid_path = os.path.join(vid_dir, vid_filename)
     video.save(vid_path)
     pptx_filename = pptx_path = None
     if pptx:
         pptx_orig = secure_filename(pptx.filename)
         pptx_filename = uid + "_" + pptx_orig
-        pptx_path = os.path.join(PPTX_DIR, pptx_filename)
+        pptx_path = os.path.join(pptx_dir, pptx_filename)
         pptx.save(pptx_path)
     conn = get_db()
     if folder_id:
@@ -256,11 +299,16 @@ def add_report(vid):
     asset_info_json = request.form.get("asset_info")
     ace_score = request.form.get("ace_score")
     pptx_filename = pptx_path = None
+    conn_t = get_db()
+    ver_row = conn_t.execute("SELECT a.folder_id FROM versions v JOIN assets a ON v.asset_id=a.id WHERE v.id=?", (vid,)).fetchone()
+    project_id = get_project_id(conn_t, ver_row["folder_id"] if ver_row else None)
+    conn_t.close()
+    _, pptx_dir = get_media_dirs(project_id)
     if pptx:
         uid = str(uuid.uuid4())[:8]
         pptx_orig = secure_filename(pptx.filename)
         pptx_filename = uid + "_" + pptx_orig
-        pptx_path = os.path.join(PPTX_DIR, pptx_filename)
+        pptx_path = os.path.join(pptx_dir, pptx_filename)
         pptx.save(pptx_path)
     conn = get_db()
     conn.execute("UPDATE versions SET pptx_filename=?, pptx_path=?, ace_score=?, kpi_data=?, asset_info=? WHERE id=?", (pptx_filename, pptx_path, ace_score, scores_json, asset_info_json, vid))
@@ -293,3 +341,43 @@ def project_stats():
         result[str(pid)] = dict(row) if row else {"total":0,"green":0,"amber":0,"red":0,"unscored":0}
     conn.close()
     return jsonify(result)
+
+@app.route("/api/versions/<int:vid>/comments", methods=["GET"])
+def get_comments(vid):
+    conn = get_db()
+    rows = conn.execute("SELECT * FROM comments WHERE version_id=? ORDER BY timecode", (vid,)).fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
+@app.route("/api/versions/<int:vid>/comments", methods=["POST"])
+def add_comment(vid):
+    data = request.get_json()
+    timecode = data.get("timecode", 0)
+    text = data.get("text", "").strip()
+    if not text: return jsonify({"error": "Text required"}), 400
+    conn = get_db()
+    cur = conn.execute("INSERT INTO comments (version_id, timecode, text) VALUES (?,?,?)", (vid, timecode, text))
+    conn.commit()
+    cid = cur.lastrowid
+    row = conn.execute("SELECT * FROM comments WHERE id=?", (cid,)).fetchone()
+    conn.close()
+    return jsonify(dict(row)), 201
+
+@app.route("/api/comments/<int:cid>", methods=["DELETE"])
+def delete_comment(cid):
+    conn = get_db()
+    conn.execute("DELETE FROM comments WHERE id=?", (cid,))
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})
+
+@app.route("/api/assets/<int:aid>/status", methods=["PUT"])
+def update_status(aid):
+    data = request.get_json()
+    status = data.get("status", "unreviewed")
+    if status not in ("unreviewed", "needs_attention", "reviewed", "approved"): return jsonify({"error": "Invalid status"}), 400
+    conn = get_db()
+    conn.execute("UPDATE assets SET review_status=? WHERE id=?", (status, aid))
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True})

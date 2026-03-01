@@ -1,27 +1,39 @@
-import os, sqlite3
+S = chr(32)*4
+S2 = chr(32)*8
+N = chr(10)
+Q = chr(34)
+A = chr(39)
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'database.db')
-conn = sqlite3.connect(DB_PATH)
+f = open('app.py', 'r')
+src = f.read()
+f.close()
 
-# Add new columns to folders
-existing_f = [r[1] for r in conn.execute("PRAGMA table_info(folders)").fetchall()]
-folder_cols = [
-('is_managed', 'INTEGER DEFAULT 0'),
-('config', 'TEXT'),
-('brainsuite_test', 'TEXT'),
-('cta', 'INTEGER'),
-('file_type', 'TEXT DEFAULT "video"')
-]
-[conn.execute("ALTER TABLE folders ADD COLUMN "+c+" "+d) for c,d in folder_cols if c not in existing_f]
+old = 'def get_media_dirs(project_id):' + N
+old += S + 'base = os.path.join(MEDIA_ROOT, ' + Q + 'projects' + Q + ', str(project_id)) if project_id else os.path.join(MEDIA_ROOT, ' + Q + 'unsorted' + Q + ')' + N
+old += S + 'vid = os.path.join(base, ' + Q + 'videos' + Q + ')' + N
+old += S + 'pptx = os.path.join(base, ' + Q + 'pptx' + Q + ')' + N
+old += S + 'os.makedirs(vid, exist_ok=True)' + N
+old += S + 'os.makedirs(pptx, exist_ok=True)' + N
+old += S + 'return vid, pptx'
 
-# Add new columns to assets
-existing_a = [r[1] for r in conn.execute("PRAGMA table_info(assets)").fetchall()]
-asset_cols = [
-('content_origin', 'TEXT DEFAULT "Brand"'),
-('language', 'TEXT')
-]
-[conn.execute("ALTER TABLE assets ADD COLUMN "+c+" "+d) for c,d in asset_cols if c not in existing_a]
+new = 'def get_media_dirs(project_id):' + N
+new += S + 'if project_id:' + N
+new += S2 + 'conn_n = get_db()' + N
+new += S2 + 'row = conn_n.execute(' + Q + 'SELECT name FROM folders WHERE id=?' + Q + ', (project_id,)).fetchone()' + N
+new += S2 + 'conn_n.close()' + N
+new += S2 + 'name = row[' + Q + 'name' + Q + '] if row else str(project_id)' + N
+new += S2 + 'safe = ' + Q + Q + '.join(c if c.isalnum() or c == ' + A + '-' + A + ' else ' + A + '_' + A + ' for c in name)' + N
+new += S2 + 'base = os.path.join(MEDIA_ROOT, ' + Q + 'projects' + Q + ', str(project_id) + ' + A + '_' + A + ' + safe)' + N
+new += S + 'else:' + N
+new += S2 + 'base = os.path.join(MEDIA_ROOT, ' + Q + 'unsorted' + Q + ')' + N
+new += S + 'vid = os.path.join(base, ' + Q + 'videos' + Q + ')' + N
+new += S + 'pptx = os.path.join(base, ' + Q + 'pptx' + Q + ')' + N
+new += S + 'os.makedirs(vid, exist_ok=True)' + N
+new += S + 'os.makedirs(pptx, exist_ok=True)' + N
+new += S + 'return vid, pptx'
 
-conn.commit()
-conn.close()
-print("✅ Database updated")
+src = src.replace(old, new)
+f = open('app.py', 'w')
+f.write(src)
+f.close()
+print('done')
