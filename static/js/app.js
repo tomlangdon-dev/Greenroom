@@ -115,37 +115,46 @@ function toggleCollapse(id) {
   renderSidebar();
 }
 
-function makeRow(id,label,depth) {
+function makeRow(id,label,depth){
 var row=document.createElement("div");
 var isTop=depth===0;
-var folder = state.folders.find(function(f) { return f.id === id; });
-var isManaged = folder && folder.is_managed;
-
+var folder=state.folders.find(function(f){return f.id===id;});
+var isManaged=folder&&folder.is_managed;
 row.className="frow"+(state.folderId===id?" active":"")+(isTop?" frow-toplevel":"");
 row.style.paddingLeft=(12+depth*14)+"px";
-
 var hasKids=state.folders.some(function(f){return f.parent_id===id;});
 var isCol=collapsedFolders.has(id);
 var arrow=hasKids?'<span class="farrow'+(isCol?'':' open')+'" onclick="event.stopPropagation();toggleCollapse('+id+')">▶</span>':'<span class="farrow-sp"></span>';
-
-var icon = '📁';
-var acts = isManaged ? '' : '<span class="factions"><button class="ibtn" onclick="event.stopPropagation();renameF('+id+')">✏️</button><button class="ibtn" onclick="event.stopPropagation();deleteF('+id+')">🗑</button></span>';
-
+var icon='📁';
+var acts=isManaged?''  :'<span class="factions"><button class="ibtn" onclick="event.stopPropagation();renameF('+id+')">✏️</button><button class="ibtn" onclick="event.stopPropagation();deleteF('+id+')">🗑</button></span>';
 row.innerHTML=arrow+'<span class="ficon">'+icon+'</span><span class="fname">'+label+'</span>'+acts;
 row.onclick=function(){loadAssets(id);};
+if(isManaged){row.addEventListener('contextmenu',function(e){e.preventDefault();showManagedFolderCtx(e,id);});}
+else{row.addEventListener('contextmenu',function(e){e.preventDefault();showFolderCtx(e,id);});}
 
-if (isManaged) {
-  row.addEventListener('contextmenu', function(e) {
+if(depth>=1){
+  row.addEventListener('dragover',function(e){
+    if(!state.draggingAssetId)return;
     e.preventDefault();
-    showManagedFolderCtx(e, id);
+    updateDragGhost(e.clientX,e.clientY);
+    row.style.background='#1e293b';
+    row.style.borderLeftColor='#6366f1';
+    if(dragGhostEl)dragGhostEl.style.transform='scale(0.5)';
   });
-} else {
-  row.addEventListener('contextmenu', function(e) {
+  row.addEventListener('dragleave',function(e){
+    if(row.contains(e.relatedTarget))return;
+    row.style.background='';
+    row.style.borderLeftColor='';
+    if(dragGhostEl)dragGhostEl.style.transform='scale(1)';
+  });
+  row.addEventListener('drop',function(e){
     e.preventDefault();
-    showFolderCtx(e, id);
+    row.style.background='';
+    row.style.borderLeftColor='';
+    if(dragGhostEl)dragGhostEl.style.transform='scale(1)';
+    sidebarFolderDrop(id);
   });
 }
-
 return row;
 }
 
@@ -979,6 +988,29 @@ dragGhostEl.style.top=(y-dragGhostOffsetY)+'px';
 function folderDragOver(e,el){if(!state.draggingAssetId)return;e.preventDefault();el.style.outline="3px solid #6366f1";if(dragGhostEl)dragGhostEl.style.transform='scale(0.5)';}
 function folderDragLeave(el){el.style.outline="";if(dragGhostEl)dragGhostEl.style.transform='scale(1)';}
 async function folderDrop(e,folderId){e.preventDefault();folderDragLeave(e.currentTarget);if(!state.draggingAssetId)return;await submitMove(state.draggingAssetId,folderId);state.draggingAssetId=null;}
+async function sidebarFolderDrop(folderId){
+if(!state.draggingAssetId)return;
+var assetId=state.draggingAssetId;
+state.draggingAssetId=null;
+var asset=state.assets.find(function(a){return a.id===assetId;});
+var folder=state.folders.find(function(f){return f.id===folderId;});
+await api('/api/assets/'+assetId,{method:'PUT',body:JSON.stringify({folder_id:folderId})});
+if(asset&&folder&&folder.is_managed){
+  var ctx=getFolderContext(folderId,state.projectId);
+  var audTags=[];try{audTags=JSON.parse(asset.audience_tags||'[]');}catch(e){}
+  await api('/api/assets/'+assetId+'/tags',{method:'PUT',body:JSON.stringify({
+    display_name:asset.display_name||null,
+    phase:ctx.phase||null,
+    platform:ctx.platform||null,
+    format:ctx.format||null,
+    is_master:asset.is_master||0,
+    audience_tags:audTags,
+    content_origin:asset.content_origin||'Brand',
+    language:asset.language||null
+  })});
+}
+loadAssets(state.folderId);
+}
 
 function cardStackOver(e,el,targetId){
 if(!state.draggingAssetId||state.draggingAssetId===targetId)return;
